@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">DriverGPS</string>
+
+    <string name="start">Start service</string>
+    <string name="stop">Stop service</string>
+    <string name="read_qr">READ QR</string>
+    <string name="title_activity_qr">QrActivity</string>
+    <string name="stoppedTracking">Stopped tracking</string>
+    <string name="coordinates">Coordinates</string>
+    <string name="time">Time</string>
+    <string name="startTracking">Start tracking</string>
+    <string name="stopTracking">Stop tracking</string>
+    <string name="showQR">show QR</string>
+    <string name="testConnection">Test connection</string>
+
+</resources>
