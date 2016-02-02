@@ -12,7 +12,7 @@ import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
 public class QrActivity extends Activity implements ZXingScannerView.ResultHandler {
 
-    public static final String TAG = "myLogs";
+    public static final String TAG = "QrActivity";
 
     private ZXingScannerView mScannerView;
 

@@ -5,12 +5,16 @@
     <string name="stop">Stop service</string>
     <string name="read_qr">READ QR</string>
     <string name="title_activity_qr">QrActivity</string>
-    <string name="stoppedTracking">Stopped tracking</string>
+    <string name="connectionResult">Stopped tracking</string>
     <string name="coordinates">Coordinates</string>
     <string name="time">Time</string>
-    <string name="startTracking">Start tracking</string>
-    <string name="stopTracking">Stop tracking</string>
+    <string name="startTracking">Start</string>
+    <string name="stopTracking">Stop</string>
     <string name="showQR">show QR</string>
-    <string name="testConnection">Test connection</string>
+    <string name="connect">Connect</string>
+    <string name="tracking">Tracking</string>
+    <string name="qr">QR-code</string>
+    <string name="gpsStatus">GPS status</string>
+    <string name="resultFromReadQR">Result from the scan</string>
 
 </resources>

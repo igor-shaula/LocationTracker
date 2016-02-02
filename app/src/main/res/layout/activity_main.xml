@@ -1,102 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingBottom="@dimen/activity_vertical_margin"
-                android:paddingLeft="@dimen/activity_horizontal_margin"
-                android:paddingRight="@dimen/activity_horizontal_margin"
-                android:paddingTop="@dimen/activity_vertical_margin"
-                tools:context=".activities.MainActivity">
 
-   <TextView
-      android:id="@+id/tvGpsData"
-      android:layout_width="wrap_content"
+<android.support.v7.widget.LinearLayoutCompat
+   xmlns:android="http://schemas.android.com/apk/res/android"
+   xmlns:tools="http://schemas.android.com/tools"
+   android:layout_width="match_parent"
+   android:layout_height="match_parent"
+   android:background="@color/primary"
+   android:orientation="vertical"
+   android:gravity="center"
+   tools:context=".activities.MainActivity">
+
+   <android.support.v7.widget.LinearLayoutCompat
+      style="@style/MyLayout"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:text="@string/coordinates"/>
+      android:layout_margin="@dimen/size_8"
+      android:orientation="vertical">
 
-   <TextView
-      android:id="@+id/tvGpsTime"
-      android:layout_width="wrap_content"
+      <android.support.v7.widget.AppCompatTextView
+         style="@style/MyText.Big"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:text="@string/qr"/>
+
+      <android.support.v7.widget.LinearLayoutCompat
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_margin="@dimen/size_8"
+         android:gravity="center"
+         android:orientation="horizontal">
+
+         <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acb_ReadQR"
+            style="@style/MyButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="qrCodeReading"
+            android:text="@string/read_qr"/>
+
+         <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acb_ShowQR"
+            style="@style/MyButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="showQr"
+            android:text="@string/showQR"/>
+
+      </android.support.v7.widget.LinearLayoutCompat>
+
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_QR_Result"
+         style="@style/MyText"
+         android:layout_width="match_parent"
+         android:layout_height="@dimen/size_24"
+         android:text="@string/resultFromReadQR"/>
+
+   </android.support.v7.widget.LinearLayoutCompat>
+
+   <android.support.v7.widget.LinearLayoutCompat
+      style="@style/MyLayout"
+      android:layout_marginLeft="@dimen/size_8"
+      android:layout_marginRight="@dimen/size_8"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_alignParentLeft="true"
-      android:layout_alignParentStart="true"
-      android:layout_below="@+id/tvGpsData"
-      android:text="@string/time"/>
+      android:orientation="vertical">
 
-   <Button
-      android:id="@+id/btnReadQr"
-      android:layout_width="wrap_content"
+      <android.support.v7.widget.AppCompatTextView
+         style="@style/MyText.Big"
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:text="@string/tracking"/>
+
+      <android.support.v7.widget.LinearLayoutCompat
+         android:layout_width="match_parent"
+         android:layout_height="wrap_content"
+         android:layout_margin="@dimen/size_8"
+         android:gravity="center"
+         android:orientation="horizontal">
+
+         <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acb_Start"
+            style="@style/MyButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="startTracking"
+            android:text="@string/startTracking"/>
+
+         <android.support.v7.widget.AppCompatButton
+            android:id="@+id/acb_Stop"
+            style="@style/MyButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:onClick="stopTracking"
+            android:text="@string/stopTracking"/>
+
+      </android.support.v7.widget.LinearLayoutCompat>
+
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsData"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/coordinates"/>
+
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsTime"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/time"/>
+
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsStatus"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/gpsStatus"/>
+
+   </android.support.v7.widget.LinearLayoutCompat>
+
+   <android.support.v7.widget.LinearLayoutCompat
+      style="@style/MyLayout"
+      android:layout_margin="@dimen/size_8"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_below="@+id/tvGpsTime"
-      android:layout_centerHorizontal="true"
-      android:layout_marginBottom="@dimen/buttons_margins"
-      android:layout_marginTop="@dimen/buttons_margins"
-      android:onClick="qrCodeReading"
-      android:text="@string/read_qr"
-      android:textSize="@dimen/buttons_text_size"/>
+      android:orientation="vertical">
 
-   <Button
-      android:id="@+id/btnStart"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/btnReadQr"
-      android:layout_centerHorizontal="true"
-      android:layout_marginBottom="@dimen/buttons_margins"
-      android:layout_marginTop="@dimen/buttons_margins"
-      android:background="#26a69a"
-      android:onClick="startTracking"
-      android:text="@string/startTracking"
-      android:textSize="@dimen/buttons_text_size"/>
+      <android.support.v7.widget.AppCompatButton
+         android:id="@+id/acb_TestConnection"
+         style="@style/MyButton"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/connect"/>
 
-   <Button
-      android:id="@+id/btnStop"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/btnStart"
-      android:layout_centerHorizontal="true"
-      android:layout_marginBottom="@dimen/buttons_margins"
-      android:layout_marginTop="@dimen/buttons_margins"
-      android:background="#ef5350"
-      android:onClick="stopTracking"
-      android:text="@string/stopTracking"
-      android:textSize="@dimen/buttons_text_size"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_InetResult"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/connectionResult"/>
 
-   <Button
-      android:id="@+id/btnShowQr"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/btnStop"
-      android:layout_centerHorizontal="true"
-      android:layout_marginTop="@dimen/buttons_margins"
-      android:onClick="showQr"
-      android:text="@string/showQR"
-      android:textSize="@dimen/buttons_text_size"/>
+   </android.support.v7.widget.LinearLayoutCompat>
 
-   <TextView
-      android:id="@+id/tvStatus"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/btnShowQr"
-      android:layout_centerHorizontal="true"
-      android:layout_marginTop="20dp"
-      android:text="@string/stoppedTracking"/>
-
-   <Button
-      android:id="@+id/testConnection"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/tvStatus"
-      android:layout_centerHorizontal="true"
-      android:text="@string/testConnection"/>
-
-   <TextView
-      android:id="@+id/tvInetResult"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:layout_below="@+id/testConnection"
-      android:layout_centerHorizontal="true"
-      android:layout_marginTop="20dp"
-      android:text="@string/stoppedTracking"/>
-
-</RelativeLayout>
+</android.support.v7.widget.LinearLayoutCompat>

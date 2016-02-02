@@ -17,6 +17,4 @@ public class GlobalKeys {
 
    public static final String GPS_TIME = "time_gps";
 
-   public static final String TAG = "onActivityResult";
-
 }

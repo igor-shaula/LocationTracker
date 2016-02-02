@@ -1,20 +1,45 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
-        <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorAccent</item>
-    </style>
+   <!-- Base application theme. -->
+   <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+      <!-- Customize your theme here. -->
+   </style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-    </style>
+   <style name="AppTheme.NoActionBar">
+      <item name="windowActionBar">false</item>
+      <item name="windowNoTitle">true</item>
+   </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+   <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+   <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
+
+   <style name="MyButton" parent="Widget.AppCompat.Button.Colored">
+      <item name="android:capitalize">none</item>
+      <!--<item name="android:layout_height">@dimen/size_24</item>-->
+      <item name="android:paddingLeft">@dimen/size_8</item>
+      <item name="android:paddingBottom">@dimen/size_0</item>
+      <item name="android:paddingTop">@dimen/size_0</item>
+      <item name="android:paddingRight">@dimen/size_8</item>
+      <item name="android:layout_margin">@dimen/size_8</item>
+      <item name="android:textSize">@dimen/textSize</item>
+      <item name="android:background">@drawable/my_rounded_button_shape</item>
+   </style>
+
+   <style name="MyText" parent="TextAppearance.AppCompat">
+      <item name="android:gravity">center</item>
+      <item name="android:singleLine">true</item>
+      <item name="android:textSize">@dimen/textSize</item>
+   </style>
+
+   <style name="MyText.Big">
+      <item name="android:textSize">@dimen/bigTextSize</item>
+   </style>
+
+   <style name="MyLayout" parent="Widget.Design.CoordinatorLayout">
+      <item name="android:padding">@dimen/size_8</item>
+      <item name="android:background">@drawable/my_layout_shape</item>
+      <item name="android:gravity">center</item>
+   </style>
 
 </resources>
