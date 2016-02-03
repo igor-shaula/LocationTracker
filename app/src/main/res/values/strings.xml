@@ -1,20 +1,21 @@
 <resources>
-    <string name="app_name">DriverGPS</string>
 
-    <string name="start">Start service</string>
-    <string name="stop">Stop service</string>
-    <string name="read_qr">READ QR</string>
-    <string name="title_activity_qr">QrActivity</string>
-    <string name="connectionResult">Stopped tracking</string>
-    <string name="coordinates">Coordinates</string>
-    <string name="time">Time</string>
-    <string name="startTracking">Start</string>
-    <string name="stopTracking">Stop</string>
-    <string name="showQR">show QR</string>
-    <string name="connect">Connect</string>
-    <string name="tracking">Tracking</string>
-    <string name="qr">QR-code</string>
-    <string name="gpsStatus">GPS status</string>
-    <string name="resultFromReadQR">Result from the scan</string>
+   <string name="app_name">DriverGPS</string>
+   <string name="title_activity_qr">QrActivity</string>
+
+   <string name="qrCode">QR-code</string>
+   <string name="readQR">Read QR</string>
+   <string name="showQR">Show QR</string>
+   <string name="resultFromReadQR">Result from the scan</string>
+
+   <string name="tracking">Tracking</string>
+   <string name="startTracking">Start</string>
+   <string name="stopTracking">Stop</string>
+   <string name="coordinates">Coordinates</string>
+   <string name="time">Time</string>
+   <string name="gpsStatus">GPS status</string>
+
+   <string name="connect">Connect</string>
+   <string name="connectionResult">Connection result</string>
 
 </resources>

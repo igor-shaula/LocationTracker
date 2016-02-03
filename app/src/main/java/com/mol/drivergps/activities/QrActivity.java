@@ -14,6 +14,8 @@ public class QrActivity extends Activity implements ZXingScannerView.ResultHandl
 
     public static final String TAG = "QrActivity";
 
+
+
     private ZXingScannerView mScannerView;
 
     @Override
@@ -49,6 +51,7 @@ public class QrActivity extends Activity implements ZXingScannerView.ResultHandl
         resultIntent.putExtra(GlobalKeys.EXTRA_QR_RESULT, resultString);
         setResult(RESULT_OK, resultIntent);
 //        setResult(GlobalKeys.CODE_FOR_QR_ACTIVITY_SCANNER, resultIntent);
+
 
         finish();
     }

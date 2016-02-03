@@ -120,7 +120,7 @@ public class MyService extends Service {
       String coord = String.valueOf(location.getLatitude() + " " + location.getLongitude());
       String timeCoordTaken = String.valueOf("Time: " + location.getTime());
 
-      Intent intentToRet = new Intent().putExtra(GlobalKeys.GPS_LOCATION, coord).putExtra(GlobalKeys.GPS_TIME, timeCoordTaken);
+      Intent intentToRet = new Intent().putExtra(GlobalKeys.QR, coord).putExtra(GlobalKeys.GPS_TIME, timeCoordTaken);
       try {
          pendingIntent.send(MyService.this, GlobalKeys.INTENT_CODE_GPS, intentToRet);
       } catch (PendingIntent.CanceledException e) {

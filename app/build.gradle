@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.mol.drivergps"
-        minSdkVersion 16
+        minSdkVersion 14
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
@@ -27,7 +27,6 @@ dependencies {
     compile 'me.dm7.barcodescanner:zxing:1.8.4'
     compile 'com.google.code.gson:gson:2.4'
     compile 'com.j256.ormlite:ormlite-android:4.48'
-    // Retrofit & OkHttp
     compile 'com.squareup.retrofit2:retrofit:2.0.0-beta3'
     compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta3'
 }

@@ -1,4 +1,4 @@
-package com.mol.drivergps.connection;
+package com.mol.drivergps.rest_connection.sample_github;
 
 import java.util.List;
 
@@ -11,8 +11,8 @@ import retrofit2.http.Path;
  */
 public interface GitHubClient {
 
-   @GET("/repos/{owner}/{repo}/contributors")
-   Call<List<Contributor>> contributors(
+   @GET("/repos/{owner}/{repo}/getContributors")
+   Call<List<Contributor>> getContributors(
             @Path("owner") String owner,
             @Path("repo") String repo
    );

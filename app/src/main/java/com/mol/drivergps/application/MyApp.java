@@ -1,4 +1,4 @@
-package com.mol.drivergps.app;
+package com.mol.drivergps.application;
 
 import android.app.Application;
 

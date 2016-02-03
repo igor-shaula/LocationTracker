@@ -6,8 +6,8 @@
    android:layout_width="match_parent"
    android:layout_height="match_parent"
    android:background="@color/primary"
-   android:orientation="vertical"
    android:gravity="center"
+   android:orientation="vertical"
    tools:context=".activities.MainActivity">
 
    <android.support.v7.widget.LinearLayoutCompat
@@ -21,7 +21,7 @@
          style="@style/MyText.Big"
          android:layout_width="match_parent"
          android:layout_height="wrap_content"
-         android:text="@string/qr"/>
+         android:text="@string/qrCode"/>
 
       <android.support.v7.widget.LinearLayoutCompat
          android:layout_width="match_parent"
@@ -37,7 +37,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="qrCodeReading"
-            android:text="@string/read_qr"/>
+            android:text="@string/readQR"/>
 
          <android.support.v7.widget.AppCompatButton
             android:id="@+id/acb_ShowQR"
@@ -61,10 +61,10 @@
 
    <android.support.v7.widget.LinearLayoutCompat
       style="@style/MyLayout"
-      android:layout_marginLeft="@dimen/size_8"
-      android:layout_marginRight="@dimen/size_8"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:layout_marginLeft="@dimen/size_8"
+      android:layout_marginRight="@dimen/size_8"
       android:orientation="vertical">
 
       <android.support.v7.widget.AppCompatTextView
@@ -125,9 +125,9 @@
 
    <android.support.v7.widget.LinearLayoutCompat
       style="@style/MyLayout"
-      android:layout_margin="@dimen/size_8"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
+      android:layout_margin="@dimen/size_8"
       android:orientation="vertical">
 
       <android.support.v7.widget.AppCompatButton
@@ -135,6 +135,7 @@
          style="@style/MyButton"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
+         android:onClick="sendInfoToServer"
          android:text="@string/connect"/>
 
       <android.support.v7.widget.AppCompatTextView

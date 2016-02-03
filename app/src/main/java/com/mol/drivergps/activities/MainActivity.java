@@ -12,20 +12,26 @@ import android.widget.Toast;
 import com.mol.drivergps.GlobalKeys;
 import com.mol.drivergps.R;
 import com.mol.drivergps.db.HelpFactory;
-import com.mol.drivergps.entity_description.Driver;
+import com.mol.drivergps.entity_description.DriverData;
+import com.mol.drivergps.rest_connection.MyRetrofitInterface;
+import com.mol.drivergps.rest_connection.MyServiceGenerator;
 import com.mol.drivergps.service.MyService;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity {
 
    private AppCompatTextView actv_QR_Result;
-   private AppCompatTextView actv_GpsData;
-   private AppCompatTextView actv_GpsTime;
+//   private AppCompatTextView actv_GpsData;
+//   private AppCompatTextView actv_GpsTime;
    private AppCompatTextView actv_GpsStatus;
 
    public final int TASK1_CODE = 1;
    public static final String TAG = "MainActivity";
 
-   public static final String SAVED_QR = "qr_saved";
+   //   public static final String SAVED_QR = "qr_saved";
    public static final String TRACKING_STARTED = "Tracking...";
    public static final String TRACKING_STOPED = "Stoped tracking";
    public static final String SCAN_CODE = "Please, scan QR code";
@@ -37,8 +43,8 @@ public class MainActivity extends AppCompatActivity {
       setContentView(R.layout.activity_main);
 
       actv_QR_Result = (AppCompatTextView) findViewById(R.id.actv_QR_Result);
-      actv_GpsData = (AppCompatTextView) findViewById(R.id.actv_GpsData);
-      actv_GpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
+//      actv_GpsData = (AppCompatTextView) findViewById(R.id.actv_GpsData);
+//      actv_GpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
       actv_GpsStatus = (AppCompatTextView) findViewById(R.id.actv_GpsStatus);
    }
 
@@ -46,6 +52,36 @@ public class MainActivity extends AppCompatActivity {
    public void qrCodeReading(View view) {
       Intent intent = new Intent(MainActivity.this, QrActivity.class);
       startActivityForResult(intent, GlobalKeys.CODE_FOR_QR_ACTIVITY_SCANNER);
+   }
+
+   // button pressed = show QR code \
+   public void showQr(View view) {
+      Toast.makeText(this, loadQrFromDb(), Toast.LENGTH_SHORT).show();
+   }
+
+   // returning point to this activity \
+   @Override
+   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+      super.onActivityResult(requestCode, resultCode, data);
+
+      Log.v(TAG, "requestCode: " + String.valueOf(requestCode));
+      Log.v(TAG, "resultCode: " + String.valueOf(resultCode));
+
+      if (requestCode == GlobalKeys.CODE_FOR_QR_ACTIVITY_SCANNER) { // requestCode = 1
+
+         Log.v(TAG, "onActivityResult in requestCode == CODE_FOR_QR_ACTIVITY_SCANNER");
+      }
+
+      if (resultCode == RESULT_OK) {
+         if (data != null) {
+            saveToTheDb(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
+            actv_QR_Result.setText(data.getStringExtra(GlobalKeys.QR_SCAN_RESULT));
+
+            Log.v(TAG, "onActivityResult in requestCode == INTENT_CODE_GPS");
+         } else {
+            actv_QR_Result.setText(SCAN_CODE);
+         }
+      }
    }
 
    // button pressed = start tracking \
@@ -66,43 +102,6 @@ public class MainActivity extends AppCompatActivity {
          actv_GpsStatus.setText(TRACKING_STARTED);
 
          startService(intentServiceGps);
-/*
-         bindService(intentServiceGps, new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-               Log.v("onServiceConnected", "worked");
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-               Log.v("onServiceDisconnected", "worked");
-            }
-         }, BIND_IMPORTANT);
-*/
-      }
-   }
-
-   @Override
-   protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-      super.onActivityResult(requestCode, resultCode, data);
-
-      Log.v(TAG, "requestCode: " + String.valueOf(requestCode));
-      Log.v(TAG, "resultCode: " + String.valueOf(resultCode));
-
-      if (requestCode == GlobalKeys.CODE_FOR_QR_ACTIVITY_SCANNER) { // requestCode = 1
-
-         Log.v(TAG, "onActivityResult in requestCode == CODE_FOR_QR_ACTIVITY_SCANNER");
-      }
-
-      if (resultCode == RESULT_OK) { // resultCode = 0
-         if (data != null) {
-            saveToTheDb(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT)); // NullPointerException
-            actv_GpsData.setText(data.getStringExtra(GlobalKeys.GPS_LOCATION));
-            actv_GpsTime.setText(data.getStringExtra(GlobalKeys.GPS_TIME));
-            Log.v(TAG, "onActivityResult in requestCode == INTENT_CODE_GPS");
-         } else {
-            actv_QR_Result.setText(SCAN_CODE);
-         }
       }
    }
 
@@ -112,62 +111,54 @@ public class MainActivity extends AppCompatActivity {
       stopService(new Intent(this, MyService.class));
    }
 
-   // button pressed = show QR code \
-   public void showQr(View view) {
-      Toast.makeText(this, loadQrFromDb(), Toast.LENGTH_SHORT).show();
-   }
+   // my Retrofit usage to send tracking data to the server \
+   public void sendInfoToServer(View view) {
 
-   // returning point to this activity \
-/*
-   @Override
-   protected void onActivityResult(int requestCode, int resultCode, Intent resultIntent) {
-      super.onActivityResult(requestCode, resultCode, resultIntent);
+      // creating a plug with mock data \
+      String qrCode = loadQrFromDb();
+      String location = "290047, 290837209";
+      String time = "00-00";
+      DriverData driverData = new DriverData(qrCode, location, time);
 
-      Log.d("onActivityResult", "worked");
-      if (resultCode == RESULT_OK) {
-         Log.d("if - resultCode", "RESULT_OK = " + resultCode);
+      // using our service class for creation of interface object \
+      MyRetrofitInterface myRetrofitInterface = MyServiceGenerator.createService(MyRetrofitInterface.class);
 
-         actv_GpsData.setText(resultIntent.getStringExtra(GlobalKeys.GPS_LOCATION));
-         actv_GpsTime.setText(resultIntent.getStringExtra(GlobalKeys.GPS_TIME));
+      // preparing the network access object - the call \
+      Call<DriverData> driverDataCall = myRetrofitInterface.makeDriverDataCall(driverData);
 
-         if (requestCode == GlobalKeys.CODE_FOR_QR_ACTIVITY_SCANNER) {
-            String resultString = resultIntent.getStringExtra(GlobalKeys.EXTRA_QR_RESULT);
-            Log.d("if - requestCode", resultString);
-            saveToTheDb(resultIntent.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
+      // performing the network connection itself \
+      driverDataCall.enqueue(new Callback<DriverData>() {
+         @Override
+         public void onResponse(Response<DriverData> response) {
+            Log.d("onResponse", response.toString());
+            if (response.isSuccess()) Log.d("onResponse", "is successfull");
+            else Log.d("onResponse", "is not successfull");
+
          }
-      }
+
+         @Override
+         public void onFailure(Throwable t) {
+            Log.d("onFailure", t.getMessage());
+         }
+      });
+
    }
-*/
 
 // working with database \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
    private void saveToTheDb(String qr) {
-      Driver driver = new Driver();
-      driver.setQr(qr);
-      HelpFactory.getDatabaseHelper().getDriverDao().add(driver);
+      DriverData driverData = new DriverData();
+      driverData.setQr(qr);
+      HelpFactory.getDatabaseHelper().getDriverDao().addNewDriverData(driverData);
+      Log.d("saveToTheDb", "worked");
    }
 
    private String loadQrFromDb() {
-      if (HelpFactory.getDatabaseHelper().getDriverDao().getDriver() == null) {
+      DriverData driverData = HelpFactory.getDatabaseHelper().getDriverDao().getDriverData();
+      if (driverData == null) {
+         Log.d("loadQrFromDb", "driverData is null");
          return "";
       }
-      return HelpFactory.getDatabaseHelper().getDriverDao().getDriver().getQr();
+      return HelpFactory.getDatabaseHelper().getDriverDao().getDriverData().getQr();
    }
-
-   // SharedPreferences are to be avoided in favor of database \
-/*
-    private void saveQrInPreferences(String qr){
-        sPref = getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor ed = sPref.edit();
-        ed.clear();
-        ed.putString(SAVED_QR, qr);
-        ed.commit();
-    }
-
-    private String loadQrFromPreferences(){
-        sPref = getPreferences(MODE_PRIVATE);
-        //Toast.makeText(this, savedQr, Toast.LENGTH_SHORT).show();
-        return sPref.getString(SAVED_QR, "");
-    }
-*/
 }
