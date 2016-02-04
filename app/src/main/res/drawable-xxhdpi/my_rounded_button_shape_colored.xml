@@ -2,11 +2,11 @@
 
 <shape xmlns:android="http://schemas.android.com/apk/res/android">
 
-   <corners android:radius="@dimen/cellRadius"/>
+   <solid android:color="@color/primary_dark"/>
 
-   <solid android:color="@color/myWhite"/>
+   <corners android:radius="@dimen/size_8"/>
 
    <stroke android:width="@dimen/size_2"
-      android:color="@color/divider"/>
+           android:color="@color/accent"/>
 
 </shape>

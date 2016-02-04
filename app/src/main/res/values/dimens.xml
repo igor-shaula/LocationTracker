@@ -4,6 +4,7 @@
    <dimen name="activity_vertical_margin">16dp</dimen>
 
    <dimen name="size_minus_4">-4dp</dimen>
+   <dimen name="size_minus_8">-8dp</dimen>
 
    <dimen name="size_0">0dp</dimen>
    <dimen name="size_2">2dp</dimen>

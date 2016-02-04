@@ -45,7 +45,7 @@ public class MyService extends Service {
 
       // main job for the service \
       if (trackGps())
-         pendingIntent = intent.getParcelableExtra(GlobalKeys.PARAM_PINTENT);
+         pendingIntent = intent.getParcelableExtra(GlobalKeys.PENDING_INTENT_KEY);
       else
          Log.d("trackGps", "is false!!!");
 

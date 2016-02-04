@@ -5,59 +5,27 @@
    xmlns:tools="http://schemas.android.com/tools"
    android:layout_width="match_parent"
    android:layout_height="match_parent"
-   android:background="@color/primary"
    android:gravity="center"
    android:orientation="vertical"
    tools:context=".activities.MainActivity">
 
-   <android.support.v7.widget.LinearLayoutCompat
-      style="@style/MyLayout"
+   <android.support.v7.widget.Toolbar
+      android:id="@+id/toolbar"
+      style="@style/Widget.AppCompat.Toolbar"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_margin="@dimen/size_8"
-      android:orientation="vertical">
+      android:layout_margin="@dimen/size_8">
 
       <android.support.v7.widget.AppCompatTextView
          style="@style/MyText.Big"
          android:layout_width="match_parent"
          android:layout_height="wrap_content"
-         android:text="@string/qrCode"/>
+         android:layout_marginEnd="@dimen/size_16"
+         android:layout_marginRight="@dimen/size_16"
+         android:text="@string/app_name"
+         android:textColor="@color/primary_dark"/>
 
-      <android.support.v7.widget.LinearLayoutCompat
-         android:layout_width="match_parent"
-         android:layout_height="wrap_content"
-         android:layout_margin="@dimen/size_8"
-         android:gravity="center"
-         android:orientation="horizontal">
-
-         <android.support.v7.widget.AppCompatButton
-            android:id="@+id/acb_ReadQR"
-            style="@style/MyButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="qrCodeReading"
-            android:text="@string/readQR"/>
-
-         <android.support.v7.widget.AppCompatButton
-            android:id="@+id/acb_ShowQR"
-            style="@style/MyButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="showQr"
-            android:text="@string/showQR"/>
-
-      </android.support.v7.widget.LinearLayoutCompat>
-
-      <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_QR_Result"
-         style="@style/MyText"
-         android:layout_width="match_parent"
-         android:layout_height="@dimen/size_24"
-         android:text="@string/resultFromReadQR"/>
-
-   </android.support.v7.widget.LinearLayoutCompat>
+   </android.support.v7.widget.Toolbar>
 
    <android.support.v7.widget.LinearLayoutCompat
       style="@style/MyLayout"
@@ -71,55 +39,16 @@
          style="@style/MyText.Big"
          android:layout_width="match_parent"
          android:layout_height="wrap_content"
-         android:text="@string/tracking"/>
+         android:text="@string/qrCode"/>
 
-      <android.support.v7.widget.LinearLayoutCompat
-         android:layout_width="match_parent"
-         android:layout_height="wrap_content"
-         android:layout_margin="@dimen/size_8"
-         android:gravity="center"
-         android:orientation="horizontal">
-
-         <android.support.v7.widget.AppCompatButton
-            android:id="@+id/acb_Start"
-            style="@style/MyButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="startTracking"
-            android:text="@string/startTracking"/>
-
-         <android.support.v7.widget.AppCompatButton
-            android:id="@+id/acb_Stop"
-            style="@style/MyButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:onClick="stopTracking"
-            android:text="@string/stopTracking"/>
-
-      </android.support.v7.widget.LinearLayoutCompat>
-
-      <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_GpsData"
-         style="@style/MyText"
+      <android.support.v7.widget.AppCompatButton
+         android:id="@+id/acb_ScanQR"
+         style="@style/MyButton"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/coordinates"/>
-
-      <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_GpsTime"
-         style="@style/MyText"
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
-         android:text="@string/time"/>
-
-      <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_GpsStatus"
-         style="@style/MyText"
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
-         android:text="@string/gpsStatus"/>
+         android:onClick="qrCodeReading"
+         android:text="@string/readQR"
+         android:textAllCaps="false"/>
 
    </android.support.v7.widget.LinearLayoutCompat>
 
@@ -127,24 +56,69 @@
       style="@style/MyLayout"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_margin="@dimen/size_8"
+      android:layout_marginBottom="@dimen/size_8"
+      android:layout_marginLeft="@dimen/size_8"
+      android:layout_marginRight="@dimen/size_8"
+      android:layout_marginTop="@dimen/size_8"
       android:orientation="vertical">
 
-      <android.support.v7.widget.AppCompatButton
-         android:id="@+id/acb_TestConnection"
-         style="@style/MyButton"
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
-         android:onClick="sendInfoToServer"
-         android:text="@string/connect"/>
-
       <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_InetResult"
-         style="@style/MyText"
-         android:layout_width="wrap_content"
+         style="@style/MyText.Big"
+         android:layout_width="match_parent"
          android:layout_height="wrap_content"
-         android:text="@string/connectionResult"/>
+         android:text="@string/tracking"/>
+
+      <android.support.v7.widget.SwitchCompat
+         android:id="@+id/sc_TrackingStatus"
+         style="@style/MyButton"
+         android:layout_width="match_parent"
+         android:layout_height="@dimen/size_64"
+         android:text="@string/sampleText"
+         android:textAllCaps="false"/>
 
    </android.support.v7.widget.LinearLayoutCompat>
+
+   <android.support.v7.widget.AppCompatTextView
+      android:id="@+id/actv_QR_Status"
+      style="@style/MyText"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/qrCodeStatus"/>
+
+   <android.support.v7.widget.AppCompatTextView
+      android:id="@+id/actv_GpsStatus"
+      style="@style/MyText"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/gpsStatus"/>
+
+   <android.support.v7.widget.AppCompatTextView
+      android:id="@+id/actv_InetResult"
+      style="@style/MyText"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/connectionStatus"/>
+
+   <android.support.v7.widget.AppCompatTextView
+      android:id="@+id/actv_GpsData"
+      style="@style/MyText"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/coordinates"/>
+
+   <android.support.v7.widget.AppCompatTextView
+      android:id="@+id/actv_GpsTime"
+      style="@style/MyText"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/time"/>
+
+   <android.support.v7.widget.AppCompatButton
+      android:id="@+id/acb_TestConnection"
+      style="@style/MyButton"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:onClick="sendInfoToServer"
+      android:text="@string/connect"/>
 
 </android.support.v7.widget.LinearLayoutCompat>
