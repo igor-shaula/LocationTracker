@@ -7,6 +7,6 @@
    <solid android:color="@color/myWhite"/>
 
    <stroke android:width="@dimen/size_2"
-      android:color="@color/divider"/>
+      android:color="@color/primary_light"/>
 
 </shape>

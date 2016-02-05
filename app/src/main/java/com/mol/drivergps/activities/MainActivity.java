@@ -2,6 +2,7 @@ package com.mol.drivergps.activities;
 
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -16,37 +17,34 @@ import android.widget.Toast;
 
 import com.mol.drivergps.GlobalKeys;
 import com.mol.drivergps.R;
-import com.mol.drivergps.db.HelpFactory;
-import com.mol.drivergps.entity_description.DriverData;
-import com.mol.drivergps.rest_connection.MyRetrofitInterface;
-import com.mol.drivergps.rest_connection.MyServiceGenerator;
 import com.mol.drivergps.service.MyService;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-
 public class MainActivity extends AppCompatActivity {
-
-   public final int TASK_TRACKING_REQUEST_CODE = 1;
-   public static final int CODE_FOR_QR_ACTIVITY = 2;
+   
+   //   private final int TASK_TRACKING_REQUEST_CODE = 1;
+   private final int CODE_FOR_QR_ACTIVITY = 12;
 
    //   public static final String SAVED_QR = "qr_saved";
-   public static final String GPS_STARTED = "GPS-tracking started";
-   public static final String GPS_STOPPED = "GPS-tracking stopped";
-   public static final String SCAN_CODE = "Please, at first scan QR code";
-   public static final String QR_IS_SAVED = "...and saved!";
+   private final String GPS_STARTED = "GPS-tracking started";
+   private final String GPS_STOPPED = "GPS-tracking stopped";
+   private final String SCAN_CODE = "Please, at first scan QR code";
+   private final String QR_CODE_IS_TAKEN = "QR-code is taken successfully";
+//   private final String QR_IS_SAVED = "...and saved!";
 
-   public static final String TRACKING_SWITCHED_ON = "Tracking launched\nTouch again to stop it";
-   public static final String TRACKING_SWITCHED_OFF = "Tracking stopped\nTouch again to start it";
+   private final String TRACKING_SWITCHED_ON = "Tracking launched\nTouch again to stop it";
+   private final String TRACKING_SWITCHED_OFF = "Tracking stopped\nTouch again to start it";
 
-   private AppCompatTextView actv_QR_Result;
+   private final String SHARED_PREFERENCES_QR_KEY = "shared preferences key for QR-code";
+
+   private AppCompatTextView actv_QR_Status;
    private AppCompatTextView actv_GpsStatus;
+   private AppCompatTextView actv_GpsData;
+   private AppCompatTextView actv_GpsTime;
 
    private AppCompatButton acb_ScanQR;
    private SwitchCompat sc_TrackingStatus;
 
-   private String qrFromDB;
+   private String qrFromSP;
 
    private int textColorDefault;
    private int textColorChanged;
@@ -59,8 +57,10 @@ public class MainActivity extends AppCompatActivity {
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
       setSupportActionBar(toolbar);
 
-      actv_QR_Result = (AppCompatTextView) findViewById(R.id.actv_QR_Status);
+      actv_QR_Status = (AppCompatTextView) findViewById(R.id.actv_QR_Status);
       actv_GpsStatus = (AppCompatTextView) findViewById(R.id.actv_GpsStatus);
+      actv_GpsData = (AppCompatTextView) findViewById(R.id.actv_GpsData);
+      actv_GpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
 
       acb_ScanQR = (AppCompatButton) findViewById(R.id.acb_ScanQR);
       sc_TrackingStatus = (SwitchCompat) findViewById(R.id.sc_TrackingStatus);
@@ -72,13 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
       sc_TrackingStatus.setText(TRACKING_SWITCHED_OFF);
 
-      qrFromDB = loadQrFromDb();
-      if (qrFromDB.equals("")) {
-         // setting appearance optimal to show user the state of data \
-         acb_ScanQR.setTextColor(textColorDefault);
-         acb_ScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape_colored);
-         sc_TrackingStatus.setVisibility(View.INVISIBLE);
-      }
+//      qrFromSP = loadQrFromDb();
+      qrFromSP = readQR_FromSP();
+
       sc_TrackingStatus.setOnCheckedChangeListener(
                new CompoundButton.OnCheckedChangeListener() {
 
@@ -92,50 +88,47 @@ public class MainActivity extends AppCompatActivity {
                   }
                }
       );
-
-      actv_QR_Result.setText(qrFromDB);
-   }
+   } // end of onCreate-method \
 
    public void startTracking() {
 
+/*
       if (loadQrFromDb().equals("")) {
-         actv_QR_Result.setText(SCAN_CODE);
+         actv_QR_Status.setText(SCAN_CODE);
          Log.d("startTracking", "QR-code is absent!");
       } else {
-
          Log.d("startTracking", "QR-code is present...");
+*/
 
-         Intent intentForTest = new Intent();
-         PendingIntent pendingIntent = createPendingResult(TASK_TRACKING_REQUEST_CODE, intentForTest, 0);
+      Intent intentForTest = new Intent();
+      PendingIntent pendingIntent = createPendingResult(GlobalKeys.TASK_TRACKING_REQUEST_CODE, intentForTest, 0);
 
-         Intent intentServiceGps = new Intent(this, MyService.class);
-         intentForTest.putExtra(GlobalKeys.PENDING_INTENT_KEY, pendingIntent);
+      Intent intentServiceGps = new Intent(this, MyService.class);
+      intentServiceGps.putExtra(GlobalKeys.QR_KEY, qrFromSP);
+      intentServiceGps.putExtra(GlobalKeys.PENDING_INTENT_KEY, pendingIntent);
 
-         sc_TrackingStatus.setTextColor(textColorChanged);
-         sc_TrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape);
+      startService(intentServiceGps);
 
-         startService(intentServiceGps);
-
-         actv_GpsStatus.setText(GPS_STARTED);
-         sc_TrackingStatus.setText(TRACKING_SWITCHED_ON);
-      }
+      sc_TrackingStatus.setTextColor(textColorChanged);
+      sc_TrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape);
+      sc_TrackingStatus.setText(TRACKING_SWITCHED_ON);
+      actv_GpsStatus.setText(GPS_STARTED);
+//      }
    }
 
    public void stopTracking() {
 
-      sc_TrackingStatus.setTextColor(textColorDefault);
-      sc_TrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape_colored);
-
       stopService(new Intent(this, MyService.class));
 
-      actv_GpsStatus.setText(GPS_STOPPED);
+      sc_TrackingStatus.setTextColor(textColorDefault);
+      sc_TrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape_colored);
       sc_TrackingStatus.setText(TRACKING_SWITCHED_OFF);
+      actv_GpsStatus.setText(GPS_STOPPED);
    }
 
    // button pressed = get QR code \
    public void qrCodeReading(View view) {
       Intent intent = new Intent(MainActivity.this, QrActivity.class);
-
       startActivityForResult(intent, CODE_FOR_QR_ACTIVITY);
    }
 
@@ -155,66 +148,45 @@ public class MainActivity extends AppCompatActivity {
          Log.v("onActivityResult", "resultCode == RESULT_OK");
          if (data != null) {
             Log.v("onActivityResult", "data != null");
-            saveToTheDb(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
-            actv_QR_Result.setText(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
+            saveQR_ToSP(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
+//            saveToTheDb(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
+            actv_QR_Status.setText(data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT));
             // the only point to enable start of the tracking \
             sc_TrackingStatus.setVisibility(View.VISIBLE);
          } else {
             Log.v("onActivityResult", "data is null");
-            actv_QR_Result.setText(SCAN_CODE);
+            actv_QR_Status.setText(SCAN_CODE);
          }
       }
+
+      // TODO: 05.02.2016 continue here \
+/*
+      // getting data from service \
+      PendingIntent pendingIntent = data.getStringExtra(GlobalKeys.P_I_CODE_GPS_DATA);
+      actv_GpsData.setText(pendingIntent.);
+*/
+
    }
 
-   private void saveToTheDb(String qrCode) {
-      DriverData driverData = new DriverData();
-      driverData.setQr(qrCode);
-      HelpFactory.getDatabaseHelper().getDriverDao().addNewDriverData(driverData);
-      Log.d("saveToTheDb", "worked");
-      Toast.makeText(this, QR_IS_SAVED, Toast.LENGTH_SHORT).show();
+   private void saveQR_ToSP(String qrFromActivityResult) {
+      SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
+      sharedPreferences.edit().clear().putString(SHARED_PREFERENCES_QR_KEY, qrFromActivityResult).apply();
+      Toast.makeText(this, QR_CODE_IS_TAKEN, Toast.LENGTH_SHORT).show();
    }
 
-   private String loadQrFromDb() {
-      DriverData driverData = HelpFactory.getDatabaseHelper().getDriverDao().getDriverData();
-      if (driverData == null) {
-         Log.d("loadQrFromDb", "driverData is null");
-         return "";
+   private String readQR_FromSP() {
+      String readQR_FromSP = getPreferences(MODE_PRIVATE).getString(SHARED_PREFERENCES_QR_KEY, "");
+
+      // setting appearance optimal to show user the state of data \
+      if (readQR_FromSP.equals("")) {
+         acb_ScanQR.setTextColor(textColorDefault);
+         acb_ScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape_colored);
+         sc_TrackingStatus.setVisibility(View.INVISIBLE);
+      } else {
+         acb_ScanQR.setTextColor(textColorChanged);
+         acb_ScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape);
+         actv_QR_Status.setText(readQR_FromSP);
       }
-      acb_ScanQR.setTextColor(textColorChanged);
-      acb_ScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape);
-      return HelpFactory.getDatabaseHelper().getDriverDao().getDriverData().getQr();
+      return readQR_FromSP;
    }
-
-   // my Retrofit usage to send tracking data to the server \
-   public void sendInfoToServer(View view) {
-
-      // creating a plug with mock data \
-      String qrCode = loadQrFromDb();
-      String location = "290047, 290837209";
-      String time = "00-00";
-      DriverData driverData = new DriverData(qrCode, location, time);
-
-      // using our service class for creation of interface object \
-      MyRetrofitInterface myRetrofitInterface = MyServiceGenerator.createService(MyRetrofitInterface.class);
-
-      // preparing the network access object - the call \
-      Call<DriverData> driverDataCall = myRetrofitInterface.makeDriverDataCall(driverData);
-
-      // performing the network connection itself \
-      driverDataCall.enqueue(new Callback<DriverData>() {
-
-         @Override
-         public void onResponse(Response<DriverData> response) {
-            Log.d("onResponse", response.toString());
-            if (response.isSuccess()) Log.d("onResponse", "is successfull");
-            else Log.d("onResponse", "is not successfull");
-
-         }
-
-         @Override
-         public void onFailure(Throwable t) {
-            Log.d("onFailure", t.getMessage());
-         }
-      });
-   } // end of sendInfoToServer-method \\
 }

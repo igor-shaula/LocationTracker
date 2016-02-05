@@ -7,6 +7,6 @@
    <corners android:radius="@dimen/size_8"/>
 
    <stroke android:width="@dimen/size_2"
-           android:color="@color/accent"/>
+           android:color="@color/divider"/>
 
 </shape>

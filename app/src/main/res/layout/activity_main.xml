@@ -5,6 +5,7 @@
    xmlns:tools="http://schemas.android.com/tools"
    android:layout_width="match_parent"
    android:layout_height="match_parent"
+   android:background="@drawable/my_layout_shape"
    android:gravity="center"
    android:orientation="vertical"
    tools:context=".activities.MainActivity">
@@ -31,8 +32,8 @@
       style="@style/MyLayout"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginLeft="@dimen/size_8"
-      android:layout_marginRight="@dimen/size_8"
+      android:layout_marginLeft="@dimen/size_10"
+      android:layout_marginRight="@dimen/size_10"
       android:orientation="vertical">
 
       <android.support.v7.widget.AppCompatTextView
@@ -56,10 +57,10 @@
       style="@style/MyLayout"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:layout_marginBottom="@dimen/size_8"
-      android:layout_marginLeft="@dimen/size_8"
-      android:layout_marginRight="@dimen/size_8"
-      android:layout_marginTop="@dimen/size_8"
+      android:layout_marginBottom="@dimen/size_10"
+      android:layout_marginLeft="@dimen/size_10"
+      android:layout_marginRight="@dimen/size_10"
+      android:layout_marginTop="@dimen/size_10"
       android:orientation="vertical">
 
       <android.support.v7.widget.AppCompatTextView
@@ -78,47 +79,51 @@
 
    </android.support.v7.widget.LinearLayoutCompat>
 
-   <android.support.v7.widget.AppCompatTextView
-      android:id="@+id/actv_QR_Status"
-      style="@style/MyText"
-      android:layout_width="wrap_content"
+   <android.support.v7.widget.LinearLayoutCompat
+      style="@style/MyLayout"
+      android:layout_width="match_parent"
       android:layout_height="wrap_content"
-      android:text="@string/qrCodeStatus"/>
+      android:layout_marginBottom="@dimen/size_10"
+      android:layout_marginLeft="@dimen/size_10"
+      android:layout_marginRight="@dimen/size_10"
+      android:isScrollContainer="true"
+      android:orientation="vertical">
 
-   <android.support.v7.widget.AppCompatTextView
-      android:id="@+id/actv_GpsStatus"
-      style="@style/MyText"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/gpsStatus"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_QR_Status"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/qrCodeStatus"/>
 
-   <android.support.v7.widget.AppCompatTextView
-      android:id="@+id/actv_InetResult"
-      style="@style/MyText"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/connectionStatus"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsStatus"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/gpsStatus"/>
 
-   <android.support.v7.widget.AppCompatTextView
-      android:id="@+id/actv_GpsData"
-      style="@style/MyText"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/coordinates"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_InetResult"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/connectionStatus"/>
 
-   <android.support.v7.widget.AppCompatTextView
-      android:id="@+id/actv_GpsTime"
-      style="@style/MyText"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:text="@string/time"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsData"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/coordinates"/>
 
-   <android.support.v7.widget.AppCompatButton
-      android:id="@+id/acb_TestConnection"
-      style="@style/MyButton"
-      android:layout_width="wrap_content"
-      android:layout_height="wrap_content"
-      android:onClick="sendInfoToServer"
-      android:text="@string/connect"/>
+      <android.support.v7.widget.AppCompatTextView
+         android:id="@+id/actv_GpsTime"
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text="@string/time"/>
+
+   </android.support.v7.widget.LinearLayoutCompat>
 
 </android.support.v7.widget.LinearLayoutCompat>

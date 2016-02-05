@@ -13,14 +13,8 @@ import java.sql.SQLException;
 
 public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
 
-   public static final String TAG = DatabaseHelper.class.getSimpleName();
    public static final String DATABASE_NAME = "driver.db";
-   public static final int DATABASE_VERSION = 2;
-
-   private static final String CREATED_OK = "onCreated worked!";
-   private static final String NOT_CREATED = "onCreated failed!!!";
-   private static final String UPGRADED_OK = "onUpgrade worked!";
-   private static final String NOT_UPGRADED = "onUpgrade failed!!!";
+   public static final int DATABASE_VERSION = 1;
 
    private DriverDao driverDao = null;
 
@@ -34,9 +28,9 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
       try {
          TableUtils.createTableIfNotExists(connectionSource, DriverData.class);
 
-         Log.i(DatabaseHelper.class.getName(), CREATED_OK);
+         Log.i(DatabaseHelper.class.getSimpleName(), "onCreated worked!");
       } catch (SQLException e) {
-         Log.e(DatabaseHelper.class.getName(), NOT_CREATED, e);
+         Log.e(DatabaseHelper.class.getSimpleName(), "onCreated failed!!!", e);
 
          e.printStackTrace();
       }
@@ -45,12 +39,13 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
    @Override
    public void onUpgrade(SQLiteDatabase database, ConnectionSource connectionSource,
                          int oldVersion, int newVersion) {
+      Log.d("onUpgrade", "started");
       try {
          TableUtils.dropTable(connectionSource, DriverData.class, true);
 
-         Log.i(DatabaseHelper.class.getName(), CREATED_OK);
+         Log.i(DatabaseHelper.class.getSimpleName(), "onUpgrade worked!");
       } catch (SQLException e) {
-         Log.e(DatabaseHelper.class.getName(), NOT_CREATED, e);
+         Log.e(DatabaseHelper.class.getSimpleName(), "onUpgrade failed!!!", e);
 
          e.printStackTrace();
       }
