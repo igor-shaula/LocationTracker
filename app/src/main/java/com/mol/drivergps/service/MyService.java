@@ -24,8 +24,8 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.mol.drivergps.GlobalKeys;
 import com.mol.drivergps.entity_description.DriverData;
-import com.mol.drivergps.rest_connection.MyRetrofitInterface;
-import com.mol.drivergps.rest_connection.MyServiceGenerator;
+import com.mol.drivergps.rest_connection_settings.MyRetrofitInterface;
+import com.mol.drivergps.rest_connection_settings.MyServiceGenerator;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -129,6 +129,8 @@ public class MyService extends Service {
                   MIN_DISTANCE_IN_METERS,
                   locationListener);
       }
+      // this is a plug only to test connection \
+      sendInfoToServer();
    }
 
    // definition of special object for listener \
@@ -138,11 +140,24 @@ public class MyService extends Service {
       public void onProviderDisabled(String provider) {
          Log.d("onProviderDisabled", "happened");
          checkInternet();
+
+         // this check is required by IDE \
+         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                  != PackageManager.PERMISSION_GRANTED
+                  &&
+                  ActivityCompat.checkSelfPermission(getApplicationContext(),
+                           Manifest.permission.ACCESS_COARSE_LOCATION)
+                           != PackageManager.PERMISSION_GRANTED) {
+            return;
+         }
+         showLocation(locationManager.getLastKnownLocation(provider)); // 100
+/*
          try {
             pendingIntent.send(GlobalKeys.P_I_PROVIDER_DISABLED); // 100
          } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
          }
+*/
       }
 
       @Override
@@ -160,11 +175,13 @@ public class MyService extends Service {
             return;
          }
          showLocation(locationManager.getLastKnownLocation(provider)); // 100
+/*
          try {
             pendingIntent.send(GlobalKeys.P_I_PROVIDER_ENABLED); // 101
          } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
          }
+*/
       }
 
       @Override
@@ -173,11 +190,13 @@ public class MyService extends Service {
          checkInternet();
 
          showLocation(location);
+/*
          try {
             pendingIntent.send(GlobalKeys.P_I_LOCATION_CHANGED); // 102
          } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
          }
+*/
       }
 
       @Override
@@ -185,11 +204,23 @@ public class MyService extends Service {
          Log.d("onStatusChanged", "started");
          checkInternet();
 
+         // this check is required by IDE \
+         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
+                  != PackageManager.PERMISSION_GRANTED
+                  &&
+                  ActivityCompat.checkSelfPermission(getApplicationContext(),
+                           Manifest.permission.ACCESS_COARSE_LOCATION)
+                           != PackageManager.PERMISSION_GRANTED) {
+            return;
+         }
+         showLocation(locationManager.getLastKnownLocation(provider)); // 100
+/*
          try {
             pendingIntent.send(GlobalKeys.P_I_STATUS_CHANGED); // 103
          } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
          }
+*/
       }
    }; // new LocationListener nameless class description ended \
 
@@ -214,7 +245,15 @@ public class MyService extends Service {
          return false;
       }
    }
-
+/*
+   private boolean checkGps() { // this doesn't work for compilator \
+      return (ActivityCompat.checkSelfPermission(getApplicationContext(),
+               Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+               &&
+               ActivityCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED);
+   }
+*/
    private void showLocation(Location location) {
       if (location == null)
          return;
@@ -249,6 +288,7 @@ public class MyService extends Service {
             break;
          }
       }
+//      String uriForCall = qrFromActivity.substring(dividerPosition + 1);
       String uriForCall = qrFromActivity.substring(dividerPosition);
       Log.d("uriForCall", uriForCall);
       // http://muleteer.herokuapp.com/tracking/mule-1 = from this app
@@ -261,6 +301,7 @@ public class MyService extends Service {
       String stringToSend = gson.toJson(driverData, DriverData.class);
       Log.d("stringToSend", stringToSend);
       // {"lat":50.44757817,"lng":30.59523956,"date":1454881104000} - from this app
+      // {"lat":50.48241842,"lng":30.48806705,"date":1454921224000}
       // { "lat": 77.77, "lng": 55.55, "date": ' + result + ' } - from sample
 
       // using our service class for creation of interface object \
@@ -287,14 +328,14 @@ public class MyService extends Service {
                Log.d("onResponse", "is successfull");
             } else {
                Log.d("onResponse", "is not successfull");
+               Log.d("onResponse", "" + response.code());
                Log.d("onResponse", response.message());
-               Log.d("onResponse", response.errorBody().toString());
             }
          }
 
          @Override
          public void onFailure(Throwable t) {
-            Log.d("onFailure", t.getMessage());
+            Log.d("onFailure", "happened");
             t.printStackTrace();
          }
       });

@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
                   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                      set_actv_GpsStatus();
                      set_actv_InetStatus();
+                     // TODO: 08.02.2016 avoid changing data for null coordinates and time \
                      if (isChecked) {
                         startTracking();
                         if (gps_OK && inet_OK) {
@@ -94,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
                         actv_GpsData.setText(getString(R.string.coordinatesOff));
                         actv_GpsTime.setText(getString(R.string.nanoTimeOff));
                      }
+                     update_GPS_Data(null);
                   }
                }
       );
@@ -204,21 +206,30 @@ public class MainActivity extends AppCompatActivity {
    }
 
    private void set_actv_GpsStatus() {
-      if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-         gps_OK = true;
-         actv_GpsStatus.setText(getString(R.string.gpsStatusEnabled));
-         actv_GpsStatus.setTextColor(primaryDarkColor);
+      if (locationManager != null) {
+         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            gps_OK = true;
+            actv_GpsStatus.setText(getString(R.string.gpsStatusEnabled));
+            actv_GpsStatus.setTextColor(primaryDarkColor);
+         } else {
+            gps_OK = false;
+            actv_GpsStatus.setText(getString(R.string.gpsStatusDisabled));
+            actv_GpsStatus.setTextColor(primaryTextColor);
+         }
+         Log.d("locationManager", locationManager.toString());
       } else {
          gps_OK = false;
          actv_GpsStatus.setText(getString(R.string.gpsStatusDisabled));
          actv_GpsStatus.setTextColor(primaryTextColor);
+         Log.d("locationManager", "is null");
       }
-      Log.d("locationManager", locationManager.toString());
    }
 
    // TODO: 08.02.2016 is it possible to simplify this construction - and how ? \
    public void set_actv_InetStatus() {
-      NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+      NetworkInfo networkInfo = null;
+      if (connectivityManager != null)
+         networkInfo = connectivityManager.getActiveNetworkInfo();
       if (networkInfo != null) {
          if (networkInfo.isConnected()) {
             inet_OK = true;
@@ -229,12 +240,12 @@ public class MainActivity extends AppCompatActivity {
             actv_InetStatus.setText(getString(R.string.internetIsOff));
             actv_InetStatus.setTextColor(primaryTextColor);
          }
+         Log.d("connectivityManager", connectivityManager.toString());
       } else {
          actv_InetStatus.setText(getString(R.string.internetIsOff));
          actv_InetStatus.setTextColor(primaryTextColor);
+         Log.d("connectivityManager", "is null");
       }
-
-      Log.d("connectivityManager", connectivityManager.toString());
    }
 
    // MAIN SET OF METHODS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -308,56 +319,71 @@ public class MainActivity extends AppCompatActivity {
             break;
          }
          case GlobalKeys.P_I_CODE_DATA_FROM_GPS: { // -100
-            // data from GPS is obtained and the service is running \
-            break;
-         }
-         case GlobalKeys.P_I_CODE_CONNECTION_OK: { // -200
-            // data from GPS is sent successfully to the server \
-            break;
-         }
-         case GlobalKeys.P_I_PROVIDER_DISABLED: // 100
-         case GlobalKeys.P_I_PROVIDER_ENABLED: { // 101
-            set_actv_GpsStatus();
-            break;
-         }
-         case GlobalKeys.P_I_LOCATION_CHANGED: { // 102
+//         case GlobalKeys.P_I_LOCATION_CHANGED: { // 102
             // getting data from service \
-            double latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE, -1);
-            double longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE, -1);
-            String coordinates = String.valueOf("Latitude: " + latitude + " Longitude: " + longitude);
-            actv_GpsData.setText(coordinates);
-            if (latitude != -1 && longitude != -1)
-               actv_GpsData.setTextColor(accentColor);
-            else actv_GpsData.setTextColor(primaryTextColor);
-
-            long timeOfTakingCoordinates = data.getLongExtra(GlobalKeys.GPS_TAKING_TIME, 0);
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(timeOfTakingCoordinates);
-            String stringTime = calendar.getTime().toString();
-            actv_GpsTime.setText(String.valueOf("Time: " + stringTime));
-            if (timeOfTakingCoordinates != 0)
-               actv_GpsTime.setTextColor(accentColor);
-            else actv_GpsTime.setTextColor(primaryTextColor);
-            break;
-         }
-         case GlobalKeys.P_I_STATUS_CHANGED: { // 103
+            update_GPS_Data(data); // data from GPS is obtained and the service is running \
 
             break;
          }
-         case GlobalKeys.P_I_CONNECTION_OFF: // 200 - doesn't work
+//         case GlobalKeys.P_I_CODE_CONNECTION_OK: { // -200
+         // data from GPS is sent successfully to the server \
+//            break;
+//         }
+//         case GlobalKeys.P_I_PROVIDER_DISABLED: // 100
+//         case GlobalKeys.P_I_PROVIDER_ENABLED: { // 101
+//            set_actv_GpsStatus();
+//            break;
+//         }
+//         case GlobalKeys.P_I_STATUS_CHANGED: { // 103
+//            break;
+//         }
+         case GlobalKeys.P_I_CONNECTION_OFF: // 200
          case GlobalKeys.P_I_CONNECTION_ON: { // 201
             set_actv_InetStatus();
             break;
          }
          default: {
-
          }
       } // end of switch-statement \\
    } // end of onActivityResult-method \\
 
+   private void update_GPS_Data(Intent data) {
+      double latitude = 0.0, longitude = 0.0;
+      long timeOfTakingCoordinates = 0;
+      if (data != null) {
+         latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE, 0.0);
+         longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE, 0.0);
+         timeOfTakingCoordinates = data.getLongExtra(GlobalKeys.GPS_TAKING_TIME, 0);
+      }
+      String coordinates = String.valueOf("Lat. " + latitude + " / Long. " + longitude);
+      actv_GpsData.setText(coordinates);
+      if (latitude != 0.0 && longitude != 0.0)
+         actv_GpsData.setTextColor(accentColor);
+      else actv_GpsData.setTextColor(primaryTextColor);
+
+      Calendar calendar = Calendar.getInstance();
+      calendar.setTimeInMillis(timeOfTakingCoordinates);
+      String stringTime = calendar.getTime().toString();
+      actv_GpsTime.setText(String.valueOf("Time: " + stringTime));
+      if (timeOfTakingCoordinates != 0)
+         actv_GpsTime.setTextColor(accentColor);
+      else actv_GpsTime.setTextColor(primaryTextColor);
+   }
+
    private void saveQR_ToSP(String qrFromActivityResult) {
       SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
       sharedPreferences.edit().clear().putString(SHARED_PREFERENCES_QR_KEY, qrFromActivityResult).apply();
-      Toast.makeText(this, getString(R.string.newQR_CodeIsSet), Toast.LENGTH_SHORT).show();
+      // setting my own toast \
+      Toast toast = Toast.makeText(this, getString(R.string.newQR_CodeIsSet), Toast.LENGTH_SHORT);
+//      Toast toast = new Toast(this);
+//      toast.setDuration(Toast.LENGTH_SHORT);
+//      toast.setGravity(Gravity.BOTTOM, 0, 24);
+//      View toastView = View.inflate(this, R.layout.my_toast, null);
+//      AppCompatTextView toastText = (AppCompatTextView) findViewById(R.id.actv_MyToast);
+//      toastText.setText(getString(R.string.newQR_CodeIsSet));
+//      toast.setView(toastView);
+//      toast.setText(getString(R.string.newQR_CodeIsSet)); // java.lang.RuntimeException: This Toast was not created with Toast.makeText()
+      toast.show();
+      // TODO: 08.02.2016 learn to set my own style of Toast with my own text \
    }
 }

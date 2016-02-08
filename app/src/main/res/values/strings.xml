@@ -16,7 +16,7 @@
    <string name="nanoTimeOff">And time of taking location info</string>
    <string name="nanoTimeOn">And time of metering as well…</string>
 
-   <string name="newQR_CodeIsSet">New QR-code is taken and saved successfully</string>
+   <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
 
    <string name="internetIsOn">Internet is connected. Service can do its job</string>
    <string name="internetIsOff">Internet is off! Tracking is impossible</string>

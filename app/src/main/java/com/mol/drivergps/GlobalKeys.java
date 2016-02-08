@@ -15,12 +15,12 @@ public class GlobalKeys {
    public static final int P_I_CODE_DATA_FROM_GPS = -100;
    public static final int P_I_CODE_CONNECTION_OK = -200;
 
-   public static final int P_I_PROVIDER_DISABLED = 100;
-   public static final int P_I_PROVIDER_ENABLED = 101;
-   public static final int P_I_LOCATION_CHANGED = 102;
-   public static final int P_I_STATUS_CHANGED = 103;
-   public static final int P_I_CONNECTION_OFF = 200;
-   public static final int P_I_CONNECTION_ON = 201;
+//   public static final int P_I_PROVIDER_DISABLED = 100;
+//   public static final int P_I_PROVIDER_ENABLED = 101;
+//   public static final int P_I_LOCATION_CHANGED = 102;
+//   public static final int P_I_STATUS_CHANGED = 103;
+   public static final int P_I_CONNECTION_OFF = 201;
+   public static final int P_I_CONNECTION_ON = 202;
 
    public static final String GPS_LATITUDE = "latitude received from GPS via service";
    public static final String GPS_LONGITUDE = "longitude received from GPS via service";
