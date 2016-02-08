@@ -14,8 +14,7 @@
       android:id="@+id/toolbar"
       style="@style/Widget.AppCompat.Toolbar"
       android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:layout_margin="@dimen/size_8">
+      android:layout_height="wrap_content">
 
       <android.support.v7.widget.AppCompatTextView
          style="@style/MyText.Big"
@@ -24,7 +23,7 @@
          android:layout_marginEnd="@dimen/size_16"
          android:layout_marginRight="@dimen/size_16"
          android:text="@string/app_name"
-         android:textColor="@color/primary_dark"/>
+         android:textColor="@color/primaryDark"/>
 
    </android.support.v7.widget.Toolbar>
 
@@ -46,7 +45,7 @@
          android:id="@+id/acb_ScanQR"
          style="@style/MyButton"
          android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
+         android:layout_height="@dimen/size_64"
          android:onClick="qrCodeReading"
          android:text="@string/readQR"
          android:textAllCaps="false"/>
@@ -74,6 +73,7 @@
          style="@style/MyButton"
          android:layout_width="match_parent"
          android:layout_height="@dimen/size_64"
+         android:clickable="false"
          android:text="@string/sampleText"
          android:textAllCaps="false"/>
 
@@ -88,14 +88,14 @@
       android:layout_marginRight="@dimen/size_10"
       android:isScrollContainer="true"
       android:orientation="vertical">
-
-      <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_QR_Status"
-         style="@style/MyText"
-         android:layout_width="wrap_content"
-         android:layout_height="wrap_content"
-         android:text="@string/qrCodeStatus"/>
-
+      <!--
+            <android.support.v7.widget.AppCompatTextView
+               android:id="@+id/actv_QR_Status"
+               style="@style/MyText"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:text="@string/qrCodeStatus"/>
+      -->
       <android.support.v7.widget.AppCompatTextView
          android:id="@+id/actv_GpsStatus"
          style="@style/MyText"
@@ -104,25 +104,31 @@
          android:text="@string/gpsStatus"/>
 
       <android.support.v7.widget.AppCompatTextView
-         android:id="@+id/actv_InetResult"
+         android:id="@+id/actv_InetStatus"
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
          android:text="@string/connectionStatus"/>
 
       <android.support.v7.widget.AppCompatTextView
+         style="@style/MyText"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:text=""/>
+
+      <android.support.v7.widget.AppCompatTextView
          android:id="@+id/actv_GpsData"
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/coordinates"/>
+         android:text="@string/coordinatesOff"/>
 
       <android.support.v7.widget.AppCompatTextView
          android:id="@+id/actv_GpsTime"
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/time"/>
+         android:text="@string/nanoTimeOff"/>
 
    </android.support.v7.widget.LinearLayoutCompat>
 

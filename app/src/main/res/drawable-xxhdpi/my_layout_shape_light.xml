@@ -4,9 +4,9 @@
 
    <corners android:radius="@dimen/cellRadius"/>
 
-   <solid android:color="@color/myWhite"/>
+   <solid android:color="@color/primaryLight"/>
 
    <stroke android:width="@dimen/size_2"
-      android:color="@color/primaryLight"/>
+           android:color="@color/accent"/>
 
 </shape>

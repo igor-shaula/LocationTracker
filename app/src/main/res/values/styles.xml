@@ -21,7 +21,7 @@
       <item name="android:paddingRight">@dimen/size_16</item>
       <item name="android:textSize">@dimen/textSize</item>
       <item name="android:textColor">@color/myWhite</item>
-      <item name="android:background">@drawable/my_rounded_button_shape_colored</item>
+      <item name="android:background">@drawable/my_rounded_button_shape_dark</item>
    </style>
 
    <style name="MyText" parent="TextAppearance.AppCompat">
@@ -36,7 +36,7 @@
 
    <style name="MyLayout" parent="Widget.Design.CoordinatorLayout">
       <item name="android:padding">@dimen/size_8</item>
-      <item name="android:background">@drawable/my_layout_shape</item>
+      <item name="android:background">@drawable/my_layout_shape_light</item>
       <item name="android:gravity">center</item>
    </style>
 

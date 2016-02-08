@@ -1,4 +1,4 @@
-package com.mol.drivergps.db;
+package com.mol.drivergps.zzz_not_used.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;

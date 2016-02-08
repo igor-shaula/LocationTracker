@@ -1,20 +1,31 @@
 <resources>
 
-   <string name="app_name">Driver GPS</string>
+   <string name="app_name">Muleteer</string>
    <string name="title_activity_qr">QrActivity</string>
 
    <string name="qrCode">QR-code</string>
-   <string name="readQR">Touch to scan a new one</string>
+   <string name="readQR">text for QR-code</string>
 
-   <string name="tracking">Tracking Status</string>
+   <string name="tracking">Tracking</string>
    <string name="sampleText">text for switch</string>
 
-   <string name="qrCodeStatus">Result from the scan</string>
    <string name="gpsStatus">GPS status</string>
-   <string name="connectionStatus">Connection result</string>
-   <string name="coordinates">Coordinates</string>
-   <string name="time">Time</string>
+   <string name="connectionStatus">Connection status</string>
+   <string name="coordinatesOff">Launch tracking to get coordinates</string>
+   <string name="coordinatesOn">Soon you will get coordinates…</string>
+   <string name="nanoTimeOff">And time of taking location info</string>
+   <string name="nanoTimeOn">And time of metering as well…</string>
 
-   <string name="connect">Connect</string>
+   <string name="newQR_CodeIsSet">New QR-code is taken and saved successfully</string>
+
+   <string name="internetIsOn">Internet is connected. Service can do its job</string>
+   <string name="internetIsOff">Internet is off! Tracking is impossible</string>
+   <string name="gpsStatusEnabled">GPS is running. Tracking is available</string>
+   <string name="gpsStatusDisabled">GPS is disabled. Tracking needs GPS</string>
+
+   <string name="textForNewScan">"No available QR-code found\nTouch here to get a new one"</string>
+   <string name="textForPresentScan">"QR-code is already present\nTouch here to get a new one"</string>
+   <string name="textForTrackingSwitchedOn">"Tracking launched\nTouch again to stop it"</string>
+   <string name="textForTrackingSwitchedOff">"Tracking stopped\nTouch again to launch it"</string>
 
 </resources>

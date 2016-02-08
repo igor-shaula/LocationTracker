@@ -6,10 +6,11 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:name=".application.MyApp"
+        android:name=".zzz_not_used.application.MyApp"
         android:allowBackup="true"
         android:icon="@drawable/logo_300px"
         android:label="@string/app_name"

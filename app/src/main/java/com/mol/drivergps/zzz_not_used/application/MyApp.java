@@ -1,8 +1,8 @@
-package com.mol.drivergps.application;
+package com.mol.drivergps.zzz_not_used.application;
 
 import android.app.Application;
 
-import com.mol.drivergps.db.HelpFactory;
+import com.mol.drivergps.zzz_not_used.db.HelpFactory;
 
 // is announced only to hold all aou components singular \
 public class MyApp extends Application {

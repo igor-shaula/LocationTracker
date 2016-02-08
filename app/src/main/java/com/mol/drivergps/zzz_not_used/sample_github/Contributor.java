@@ -1,4 +1,4 @@
-package com.mol.drivergps.rest_connection.sample_github;
+package com.mol.drivergps.zzz_not_used.sample_github;
 
 /**
  * Created by igor shaula

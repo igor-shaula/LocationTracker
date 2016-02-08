@@ -1,9 +1,6 @@
 package com.mol.drivergps.rest_connection;
 
-import com.mol.drivergps.entity_description.DriverData;
-
 import okhttp3.OkHttpClient;
-import retrofit2.Call;
 import retrofit2.GsonConverterFactory;
 import retrofit2.Retrofit;
 
@@ -12,7 +9,7 @@ import retrofit2.Retrofit;
  */
 public class MyServiceGenerator {
 
-   public static final String API_BASE_URL = "https://api.solveast_gps-tracker.com/";
+   public static final String API_BASE_URL = "http://muleteer.herokuapp.com";
 
    private static OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
 
