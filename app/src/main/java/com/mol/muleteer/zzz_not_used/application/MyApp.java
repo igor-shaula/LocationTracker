@@ -1,8 +1,8 @@
-package com.mol.drivergps.zzz_not_used.application;
+package com.mol.muleteer.zzz_not_used.application;
 
 import android.app.Application;
 
-import com.mol.drivergps.zzz_not_used.db.HelpFactory;
+import com.mol.muleteer.zzz_not_used.database.HelpFactory;
 
 // is announced only to hold all aou components singular \
 public class MyApp extends Application {

@@ -1,4 +1,4 @@
-package com.mol.drivergps.zzz_not_used.db;
+package com.mol.muleteer.zzz_not_used.database;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -7,7 +7,7 @@ import android.util.Log;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
-import com.mol.drivergps.entity_description.DriverData;
+import com.mol.muleteer.entity_description.DriverData;
 
 import java.sql.SQLException;
 

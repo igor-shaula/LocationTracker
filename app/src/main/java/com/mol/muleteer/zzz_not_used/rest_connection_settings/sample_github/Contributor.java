@@ -1,4 +1,4 @@
-package com.mol.drivergps.zzz_not_used.sample_github;
+package com.mol.muleteer.zzz_not_used.rest_connection_settings.sample_github;
 
 /**
  * Created by igor shaula

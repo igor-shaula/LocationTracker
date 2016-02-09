@@ -1,4 +1,4 @@
-package com.mol.drivergps.zzz_not_used.db;
+package com.mol.muleteer.zzz_not_used.database;
 
 import android.content.Context;
 

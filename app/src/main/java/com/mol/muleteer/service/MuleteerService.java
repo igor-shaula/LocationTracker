@@ -1,4 +1,4 @@
-package com.mol.drivergps.service;
+package com.mol.muleteer.service;
 
 import android.Manifest;
 import android.app.PendingIntent;
@@ -22,31 +22,31 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mol.drivergps.GlobalKeys;
-import com.mol.drivergps.entity_description.DriverData;
-import com.mol.drivergps.rest_connection_settings.MyRetrofitInterface;
-import com.mol.drivergps.rest_connection_settings.MyServiceGenerator;
+import com.mol.muleteer.GlobalKeys;
+import com.mol.muleteer.entity_description.DriverData;
 
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
+import java.io.IOException;
 
-public class MyService extends Service {
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+
+public class MuleteerService extends Service {
 
    private final static long MIN_PERIOD_MILLISECONDS = 5 * 1000;
    private final static float MIN_DISTANCE_IN_METERS = 25;
 
    private LocationManager locationManager;
+   private ConnectivityManager connectivityManager;
+
    private PendingIntent pendingIntent;
    private String qrFromActivity;
    private double latitude, longitude;
    private long timeTaken;
-   private Gson gson = new GsonBuilder().create();
 
    private LocalBroadcastManager localBroadcastManager;
    private BroadcastReceiver broadcastReceiver;
-
-   private ConnectivityManager connectivityManager;
 
 // service lifecycle started \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -65,14 +65,7 @@ public class MyService extends Service {
 
    @Override
    public int onStartCommand(Intent intent, int flags, int startId) {
-      Log.d("onStartCommand", "MyService started");
-      /*
-      if (trackGps())
-//         pendingIntent = intent.getParcelableExtra(GlobalKeys.PENDING_INTENT_KEY);
-         qrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
-      else
-         Log.d("trackGps", "is false!!!");
-      */
+      Log.d("onStartCommand", "MuleteerService started");
 
       // first we have to answer the calling activity if the service is started \
       broadcastReceiver = new BroadcastReceiver() {
@@ -97,7 +90,6 @@ public class MyService extends Service {
       }
       // main job for the service \
       trackGps();
-//      return super.onStartCommand(intent, flags, startId);
       return Service.START_REDELIVER_INTENT;
    }
 
@@ -116,10 +108,11 @@ public class MyService extends Service {
       connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
 
       // this check is required by IDE \
-      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-               != PackageManager.PERMISSION_GRANTED
-               &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+      if (ActivityCompat.checkSelfPermission(this,
+               Manifest.permission.ACCESS_COARSE_LOCATION)
+               != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
          Log.d("permissions", "are not set well");
       } else {
@@ -129,8 +122,6 @@ public class MyService extends Service {
                   MIN_DISTANCE_IN_METERS,
                   locationListener);
       }
-      // this is a plug only to test connection \
-      sendInfoToServer();
    }
 
    // definition of special object for listener \
@@ -142,22 +133,15 @@ public class MyService extends Service {
          checkInternet();
 
          // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED
-                  &&
+         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                  Manifest.permission.ACCESS_FINE_LOCATION)
+                  != PackageManager.PERMISSION_GRANTED &&
                   ActivityCompat.checkSelfPermission(getApplicationContext(),
                            Manifest.permission.ACCESS_COARSE_LOCATION)
                            != PackageManager.PERMISSION_GRANTED) {
             return;
          }
          showLocation(locationManager.getLastKnownLocation(provider)); // 100
-/*
-         try {
-            pendingIntent.send(GlobalKeys.P_I_PROVIDER_DISABLED); // 100
-         } catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-         }
-*/
       }
 
       @Override
@@ -166,37 +150,15 @@ public class MyService extends Service {
          checkInternet();
 
          // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED
-                  &&
+         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                  Manifest.permission.ACCESS_FINE_LOCATION)
+                  != PackageManager.PERMISSION_GRANTED &&
                   ActivityCompat.checkSelfPermission(getApplicationContext(),
                            Manifest.permission.ACCESS_COARSE_LOCATION)
                            != PackageManager.PERMISSION_GRANTED) {
             return;
          }
          showLocation(locationManager.getLastKnownLocation(provider)); // 100
-/*
-         try {
-            pendingIntent.send(GlobalKeys.P_I_PROVIDER_ENABLED); // 101
-         } catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-         }
-*/
-      }
-
-      @Override
-      public void onLocationChanged(Location location) {
-         Log.d("onLocationChanged", "started");
-         checkInternet();
-
-         showLocation(location);
-/*
-         try {
-            pendingIntent.send(GlobalKeys.P_I_LOCATION_CHANGED); // 102
-         } catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-         }
-*/
       }
 
       @Override
@@ -205,22 +167,22 @@ public class MyService extends Service {
          checkInternet();
 
          // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED
-                  &&
+         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+                  Manifest.permission.ACCESS_FINE_LOCATION)
+                  != PackageManager.PERMISSION_GRANTED &&
                   ActivityCompat.checkSelfPermission(getApplicationContext(),
                            Manifest.permission.ACCESS_COARSE_LOCATION)
                            != PackageManager.PERMISSION_GRANTED) {
             return;
          }
          showLocation(locationManager.getLastKnownLocation(provider)); // 100
-/*
-         try {
-            pendingIntent.send(GlobalKeys.P_I_STATUS_CHANGED); // 103
-         } catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-         }
-*/
+      }
+
+      @Override
+      public void onLocationChanged(Location location) {
+         Log.d("onLocationChanged", "started");
+         checkInternet();
+         showLocation(location);
       }
    }; // new LocationListener nameless class description ended \
 
@@ -245,15 +207,7 @@ public class MyService extends Service {
          return false;
       }
    }
-/*
-   private boolean checkGps() { // this doesn't work for compilator \
-      return (ActivityCompat.checkSelfPermission(getApplicationContext(),
-               Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-               &&
-               ActivityCompat.checkSelfPermission(getApplicationContext(),
-                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED);
-   }
-*/
+
    private void showLocation(Location location) {
       if (location == null)
          return;
@@ -279,8 +233,46 @@ public class MyService extends Service {
    // my Retrofit usage to send tracking data to the server \
    public void sendInfoToServer() {
       Log.d("sendInfoToServer", "started");
-      // preparing URI for muleteer.herokuapp.com/tracking/mule-1
 
+      // at first creating object to send to the server \
+      DriverData driverData = new DriverData(latitude, longitude, timeTaken);
+
+      Gson gson = new GsonBuilder().create();
+
+      String jsonToSend = gson.toJson(driverData, DriverData.class);
+      Log.d("jsonToSend", jsonToSend);
+
+      MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+      RequestBody body = RequestBody.create(JSON, jsonToSend);
+
+      Request request = new Request.Builder()
+               .url("http://" + qrFromActivity)
+               .post(body)
+               .build();
+
+      OkHttpClient okHttpClient = new OkHttpClient();
+
+      okHttpClient.newCall(request).enqueue(new okhttp3.Callback() {
+         @Override
+         public void onFailure(Request request, IOException e) {
+            Log.d("onFailure", request.toString());
+         }
+
+         @Override
+         public void onResponse(okhttp3.Response response) throws IOException {
+            Log.d("onResponse", response.message());
+            if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
+            else Log.d("onResponse", "is not successfull - OkHTTP");
+         }
+      });
+
+// Retrofit actually doesn't work and is successfully replaced by OkHTTP ///////////////////////////
+/*
+      // using our service class for creation of interface object \
+      MyRetrofitInterface myRetrofitInterface = MyServiceGenerator.createService(MyRetrofitInterface.class);
+
+      // retrofit requires the base URL to be separated - let's do it \
       int dividerPosition = 0;
       for (int i = 2; i < qrFromActivity.length(); i++) {
          if (qrFromActivity.charAt(i) == '/') {
@@ -288,46 +280,22 @@ public class MyService extends Service {
             break;
          }
       }
-//      String uriForCall = qrFromActivity.substring(dividerPosition + 1);
       String uriForCall = qrFromActivity.substring(dividerPosition);
       Log.d("uriForCall", uriForCall);
-      // http://muleteer.herokuapp.com/tracking/mule-1 = from this app
-      // muleteer.herokuapp.com/tracking/mule-1 = from QR-scanning
-
-      // at first creating object to send to the server \
-      DriverData driverData = new DriverData(latitude, longitude, timeTaken);
-
-      // preparing JSON from our object \
-      String stringToSend = gson.toJson(driverData, DriverData.class);
-      Log.d("stringToSend", stringToSend);
-      // {"lat":50.44757817,"lng":30.59523956,"date":1454881104000} - from this app
-      // {"lat":50.48241842,"lng":30.48806705,"date":1454921224000}
-      // { "lat": 77.77, "lng": 55.55, "date": ' + result + ' } - from sample
-
-      // using our service class for creation of interface object \
-      MyRetrofitInterface myRetrofitInterface = MyServiceGenerator.createService(MyRetrofitInterface.class);
 
       // preparing the network access object - the call \
       Call<DriverData> driverDataCall = myRetrofitInterface.makeDriverDataCall(uriForCall, driverData);
-//      Call<DriverData> driverDataCall = myRetrofitInterface.makeDriverDataCall(uriForCall, stringToSend);
 
       // performing the network connection itself \
       driverDataCall.enqueue(new Callback<DriverData>() {
 
          @Override
          public void onResponse(Response<DriverData> response) {
-            Log.d("onResponse", response.toString());
-
+            Log.d("onResponse", response.message());
             if (response.isSuccess()) {
-               try {
-                  Intent intent = new Intent().putExtra(GlobalKeys.CONNECTION_RESULT, response.message());
-                  pendingIntent.send(getApplicationContext(), GlobalKeys.P_I_CODE_CONNECTION_OK, intent);
-               } catch (PendingIntent.CanceledException e) {
-                  e.printStackTrace();
-               }
-               Log.d("onResponse", "is successfull");
+               Log.d("onResponse", "is successfull - Retrofit");
             } else {
-               Log.d("onResponse", "is not successfull");
+               Log.d("onResponse", "is not successfull - Retrofit");
                Log.d("onResponse", "" + response.code());
                Log.d("onResponse", response.message());
             }
@@ -335,9 +303,10 @@ public class MyService extends Service {
 
          @Override
          public void onFailure(Throwable t) {
-            Log.d("onFailure", "happened");
+            Log.d("onFailure", "happened - Retrofit");
             t.printStackTrace();
          }
       });
+*/
    } // end of sendInfoToServer-method \\
 }

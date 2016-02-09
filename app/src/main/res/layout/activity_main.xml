@@ -47,7 +47,7 @@
          android:layout_width="wrap_content"
          android:layout_height="@dimen/size_64"
          android:onClick="qrCodeReading"
-         android:text="@string/readQR"
+         android:text="@string/sampleText"
          android:textAllCaps="false"/>
 
    </android.support.v7.widget.LinearLayoutCompat>
@@ -80,7 +80,7 @@
    </android.support.v7.widget.LinearLayoutCompat>
 
    <android.support.v7.widget.LinearLayoutCompat
-      style="@style/MyLayout"
+      style="@style/MyLayout.Bottom"
       android:layout_width="match_parent"
       android:layout_height="wrap_content"
       android:layout_marginBottom="@dimen/size_10"
@@ -108,7 +108,7 @@
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/connectionStatus"/>
+         android:text="@string/inetStatus"/>
 
       <android.support.v7.widget.AppCompatTextView
          style="@style/MyText"
@@ -121,14 +121,14 @@
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/coordinatesOff"/>
+         android:text="@string/gpsDataOff"/>
 
       <android.support.v7.widget.AppCompatTextView
          android:id="@+id/actv_GpsTime"
          style="@style/MyText"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
-         android:text="@string/nanoTimeOff"/>
+         android:text="@string/gpsTimeOff"/>
 
    </android.support.v7.widget.LinearLayoutCompat>
 

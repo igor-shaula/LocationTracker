@@ -1,10 +1,10 @@
-package com.mol.drivergps.zzz_not_used.db;
+package com.mol.muleteer.zzz_not_used.database;
 
 import android.util.Log;
 
 import com.j256.ormlite.dao.BaseDaoImpl;
 import com.j256.ormlite.support.ConnectionSource;
-import com.mol.drivergps.entity_description.DriverData;
+import com.mol.muleteer.entity_description.DriverData;
 
 import java.sql.SQLException;
 
@@ -17,7 +17,7 @@ public class DriverDao extends BaseDaoImpl<DriverData, Integer> {
    public void addNewDriverData(DriverData driverData) {
       Log.d("addNewDriverData", driverData.toString());
       try {
-         this.createOrUpdate(driverData);
+         createOrUpdate(driverData);
       } catch (SQLException e) {
          e.printStackTrace();
       }

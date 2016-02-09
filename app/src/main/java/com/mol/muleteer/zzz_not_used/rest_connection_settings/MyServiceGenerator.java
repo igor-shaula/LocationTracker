@@ -1,4 +1,4 @@
-package com.mol.drivergps.rest_connection_settings;
+package com.mol.muleteer.zzz_not_used.rest_connection_settings;
 
 import okhttp3.OkHttpClient;
 import retrofit2.GsonConverterFactory;
@@ -10,12 +10,7 @@ import retrofit2.Retrofit;
 public class MyServiceGenerator {
 
    public static final String API_BASE_URL = "http://muleteer.herokuapp.com";
-/*
-      private static OkHttpClient.Builder httpClientBuilder = new OkHttpClient.Builder();
-      private static Retrofit.Builder builder = new Retrofit.Builder()
-            .baseUrl(API_BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create());
-*/
+
    public static <S> S createService(Class<S> serviceClass) {
 /*
       Interceptor newInterseptor = new Interceptor() {
@@ -25,7 +20,7 @@ public class MyServiceGenerator {
             // Customize the request
             Request newRequest = original.newBuilder()
                      .addHeader("Content-Type", "application/json")
-//                     .method(original.method(), original.body())
+                     .method(original.method(), original.body())
                      .build();
             // Customize or return the response
             return chain.proceed(newRequest);

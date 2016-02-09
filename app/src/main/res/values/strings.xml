@@ -2,26 +2,26 @@
 
    <string name="app_name">Muleteer</string>
    <string name="title_activity_qr">QrActivity</string>
-
-   <string name="qrCode">QR-code</string>
-   <string name="readQR">text for QR-code</string>
-
-   <string name="tracking">Tracking</string>
    <string name="sampleText">text for switch</string>
 
+   <string name="qrCode">QR-code</string>
+   <string name="tracking">Tracking</string>
+
    <string name="gpsStatus">GPS status</string>
-   <string name="connectionStatus">Connection status</string>
-   <string name="coordinatesOff">Launch tracking to get coordinates</string>
-   <string name="coordinatesOn">Soon you will get coordinates…</string>
-   <string name="nanoTimeOff">And time of taking location info</string>
-   <string name="nanoTimeOn">And time of metering as well…</string>
+   <string name="inetStatus">Connection status</string>
+
+   <string name="gpsDataOff">Launch tracking to get coordinates</string>
+   <string name="gpsTimeOff">And time of taking location info</string>
+   <string name="gpsDataOn">Soon you will get coordinates…</string>
+   <string name="gpsTimeOn">And time of metering as well…</string>
 
    <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
+   <string name="oldQR_CodeIsKept">This QR-code is already in use</string>
 
-   <string name="internetIsOn">Internet is connected. Service can do its job</string>
-   <string name="internetIsOff">Internet is off! Tracking is impossible</string>
-   <string name="gpsStatusEnabled">GPS is running. Tracking is available</string>
-   <string name="gpsStatusDisabled">GPS is disabled. Tracking needs GPS</string>
+   <string name="gpsEnabled">GPS enabled</string>
+   <string name="gpsDisabled">GPS disabled</string>
+   <string name="inetConnected">Internet connected</string>
+   <string name="inetDisconnected">Internet disconnected</string>
 
    <string name="textForNewScan">"No available QR-code found\nTouch here to get a new one"</string>
    <string name="textForPresentScan">"QR-code is already present\nTouch here to get a new one"</string>

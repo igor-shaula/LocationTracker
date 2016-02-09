@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mol.drivergps">
+    package="com.mol.muleteer">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -10,14 +10,13 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:name=".zzz_not_used.application.MyApp"
         android:allowBackup="true"
         android:icon="@drawable/logo_300px"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
 
-        <activity android:name=".activities.MainActivity"
+        <activity android:name="com.mol.muleteer.activities.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -27,17 +26,17 @@
         </activity>
 
         <service
-            android:name=".service.MyService"
+            android:name="com.mol.muleteer.service.MuleteerService"
             android:enabled="true"/>
 
-        <receiver android:name=".broadcast_receiver.MyBootReceiver">
+        <receiver android:name=".broadcast_receiver.BootReceiver">
             <intent-filter >
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
 
         <activity
-            android:name=".activities.QrActivity"
+            android:name="com.mol.muleteer.activities.QrActivity"
             android:label="@string/title_activity_qr"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>

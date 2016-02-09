@@ -31,6 +31,7 @@
    </style>
 
    <style name="MyText.Big">
+      <item name="android:textColor">@color/secondaryText</item>
       <item name="android:textSize">@dimen/bigTextSize</item>
    </style>
 
@@ -40,9 +41,8 @@
       <item name="android:gravity">center</item>
    </style>
 
-   <style name="MyLayout.Outer">
-      <item name="android:padding">@dimen/size_0</item>
-      <item name="android:layout_margin">@dimen/size_0</item>
+   <style name="MyLayout.Bottom">
+      <item name="android:background">@drawable/my_layout_shape</item>
    </style>
 
 </resources>

@@ -1,19 +1,17 @@
-package com.mol.drivergps.broadcast_receiver;
+package com.mol.muleteer.broadcast_receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.mol.drivergps.service.MyService;
+import com.mol.muleteer.service.MuleteerService;
 
 /**
  * Created by igor shaula
  */
-public class MyBootReceiver extends BroadcastReceiver {
+public class BootReceiver extends BroadcastReceiver {
    @Override
    public void onReceive(Context context, Intent intent) {
-
-      context.startService(new Intent(context, MyService.class));
-
+      context.startService(new Intent(context, MuleteerService.class));
    }
 }

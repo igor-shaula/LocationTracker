@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "com.mol.drivergps"
+        applicationId "com.mol.muleteer"
         minSdkVersion 14
         targetSdkVersion 23
         versionCode 1
@@ -29,4 +29,5 @@ dependencies {
     compile 'com.j256.ormlite:ormlite-android:4.48'
     compile 'com.squareup.retrofit2:retrofit:2.0.0-beta3'
     compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta3'
+//    compile 'com.squareup.okhttp3:okhttp:3.1.1'
 }
