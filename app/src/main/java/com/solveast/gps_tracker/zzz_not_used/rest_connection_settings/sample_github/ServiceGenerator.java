@@ -1,12 +1,15 @@
-package com.mol.muleteer.zzz_not_used.rest_connection_settings.sample_github;
+/*
+package com.solveast.gps_tracker.zzz_not_used.rest_connection_settings.sample_github;
 
 import okhttp3.OkHttpClient;
 import retrofit2.GsonConverterFactory;
 import retrofit2.Retrofit;
 
+*/
 /**
  * Created by igor shaula
- */
+ *//*
+
 public class ServiceGenerator {
 
    public static final String API_BASE_URL = "https://api.github.com/";
@@ -21,4 +24,4 @@ public class ServiceGenerator {
       Retrofit retrofit = builder.client(httpClient.build()).build();
       return retrofit.create(serviceClass);
    }
-}
+}*/

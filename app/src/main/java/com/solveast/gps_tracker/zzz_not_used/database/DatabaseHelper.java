@@ -1,4 +1,5 @@
-package com.mol.muleteer.zzz_not_used.database;
+/*
+package com.solveast.gps_tracker.zzz_not_used.database;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -7,7 +8,7 @@ import android.util.Log;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
-import com.mol.muleteer.entity_description.DriverData;
+import com.solveast.gps_tracker.entity_description.DriverData;
 
 import java.sql.SQLException;
 
@@ -61,4 +62,4 @@ public class DatabaseHelper extends OrmLiteSqliteOpenHelper {
       }
       return driverDao;
    }
-}
+}*/

@@ -1,4 +1,4 @@
-package com.mol.muleteer.service;
+package com.solveast.gps_tracker.service;
 
 import android.Manifest;
 import android.app.PendingIntent;
@@ -22,15 +22,18 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.mol.muleteer.GlobalKeys;
-import com.mol.muleteer.entity_description.DriverData;
+import com.solveast.gps_tracker.GlobalKeys;
+import com.solveast.gps_tracker.entity_description.DriverData;
 
 import java.io.IOException;
 
+import okhttp3.Call;
+import okhttp3.Callback;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MuleteerService extends Service {
 
@@ -122,6 +125,7 @@ public class MuleteerService extends Service {
                   MIN_DISTANCE_IN_METERS,
                   locationListener);
       }
+//      sendInfoToServer();
    }
 
    // definition of special object for listener \
@@ -253,7 +257,22 @@ public class MuleteerService extends Service {
 
       OkHttpClient okHttpClient = new OkHttpClient();
 
-      okHttpClient.newCall(request).enqueue(new okhttp3.Callback() {
+      okHttpClient.newCall(request).enqueue(new Callback() {
+         @Override
+         public void onFailure(Call call, IOException e) {
+            Log.d("onFailure", e.getMessage());
+         }
+
+         @Override
+         public void onResponse(Call call, Response response) throws IOException {
+            Log.d("onResponse", response.message());
+            if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
+            else {
+               Log.d("onResponse", call.request().toString());
+               Log.d("onResponse", call.request().body().contentType().toString());
+            }
+         }
+/*
          @Override
          public void onFailure(Request request, IOException e) {
             Log.d("onFailure", request.toString());
@@ -264,7 +283,7 @@ public class MuleteerService extends Service {
             Log.d("onResponse", response.message());
             if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
             else Log.d("onResponse", "is not successfull - OkHTTP");
-         }
+         }*/
       });
 
 // Retrofit actually doesn't work and is successfully replaced by OkHTTP ///////////////////////////

@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "com.mol.muleteer"
+        applicationId "com.mol.gps_tracker"
         minSdkVersion 14
         targetSdkVersion 23
         versionCode 1
@@ -26,8 +26,8 @@ dependencies {
     compile 'com.android.support:design:23.1.1'
     compile 'me.dm7.barcodescanner:zxing:1.8.4'
     compile 'com.google.code.gson:gson:2.5'
-    compile 'com.j256.ormlite:ormlite-android:4.48'
-    compile 'com.squareup.retrofit2:retrofit:2.0.0-beta3'
-    compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta3'
-//    compile 'com.squareup.okhttp3:okhttp:3.1.1'
+    compile 'com.squareup.okhttp3:okhttp:3.1.1'
+//    compile 'com.j256.ormlite:ormlite-android:4.48'
+//    compile 'com.squareup.retrofit2:retrofit:2.0.0-beta3'
+//    compile 'com.squareup.retrofit2:converter-gson:2.0.0-beta3'
 }

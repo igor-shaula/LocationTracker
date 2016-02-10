@@ -1,11 +1,11 @@
-package com.mol.muleteer;
+package com.solveast.gps_tracker;
 
 /**
  * Created by igor shaula
  */
 public class GlobalKeys {
 
-   public static final String LOCAL_BROADCAST_SERVICE_CHECK = "com.mol.muleteer - check service state";
+   public static final String LOCAL_BROADCAST_SERVICE_CHECK = "com.mol.gps_tracker - check service state";
    public static final String START_SERVICE_CHECK = "checking the state of the service at the start of activity";
    public static final String PENDING_INTENT_KEY = "pendingIntent";
    public static final String EXTRA_QR_RESULT = "QrResult";

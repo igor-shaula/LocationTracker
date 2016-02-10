@@ -1,4 +1,4 @@
-package com.mol.muleteer.activities;
+package com.solveast.gps_tracker.activities;
 
 import android.app.Activity;
 import android.content.Intent;
@@ -6,7 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 
 import com.google.zxing.Result;
-import com.mol.muleteer.GlobalKeys;
+import com.solveast.gps_tracker.GlobalKeys;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 

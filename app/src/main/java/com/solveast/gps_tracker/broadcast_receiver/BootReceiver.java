@@ -1,10 +1,10 @@
-package com.mol.muleteer.broadcast_receiver;
+package com.solveast.gps_tracker.broadcast_receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.mol.muleteer.service.MuleteerService;
+import com.solveast.gps_tracker.service.MuleteerService;
 
 /**
  * Created by igor shaula

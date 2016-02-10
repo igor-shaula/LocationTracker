@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.mol.muleteer">
+    package="com.solveast.gps_tracker">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -11,12 +11,12 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/logo_300px"
+        android:icon="@drawable/map_icon_green"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
 
-        <activity android:name="com.mol.muleteer.activities.MainActivity"
+        <activity android:name="com.solveast.gps_tracker.activities.MainActivity"
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -26,17 +26,17 @@
         </activity>
 
         <service
-            android:name="com.mol.muleteer.service.MuleteerService"
+            android:name="com.solveast.gps_tracker.service.MuleteerService"
             android:enabled="true"/>
 
-        <receiver android:name=".broadcast_receiver.BootReceiver">
+        <receiver android:name="com.solveast.gps_tracker.broadcast_receiver.BootReceiver">
             <intent-filter >
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
 
         <activity
-            android:name="com.mol.muleteer.activities.QrActivity"
+            android:name="com.solveast.gps_tracker.activities.QrActivity"
             android:label="@string/title_activity_qr"
             android:screenOrientation="portrait"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>

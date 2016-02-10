@@ -1,4 +1,4 @@
-package com.mol.muleteer;
+package com.solveast.gps_tracker;
 
 import org.junit.Test;
 

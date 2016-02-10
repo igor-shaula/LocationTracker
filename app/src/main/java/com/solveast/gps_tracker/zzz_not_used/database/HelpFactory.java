@@ -1,4 +1,5 @@
-package com.mol.muleteer.zzz_not_used.database;
+/*
+package com.solveast.gps_tracker.zzz_not_used.database;
 
 import android.content.Context;
 
@@ -21,4 +22,4 @@ public class HelpFactory {
         OpenHelperManager.releaseHelper();
         databaseHelper = null;
     }
-}
+}*/

@@ -1,4 +1,4 @@
-package com.mol.muleteer.activities;
+package com.solveast.gps_tracker.activities;
 
 import android.app.ActivityManager;
 import android.app.PendingIntent;
@@ -23,9 +23,9 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Toast;
 
-import com.mol.muleteer.GlobalKeys;
-import com.mol.muleteer.R;
-import com.mol.muleteer.service.MuleteerService;
+import com.solveast.gps_tracker.GlobalKeys;
+import com.solveast.gps_tracker.R;
+import com.solveast.gps_tracker.service.MuleteerService;
 
 import java.util.Calendar;
 

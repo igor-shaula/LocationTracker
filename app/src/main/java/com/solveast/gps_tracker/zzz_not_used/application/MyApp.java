@@ -1,8 +1,9 @@
-package com.mol.muleteer.zzz_not_used.application;
+/*
+package com.solveast.gps_tracker.zzz_not_used.application;
 
 import android.app.Application;
 
-import com.mol.muleteer.zzz_not_used.database.HelpFactory;
+import com.solveast.gps_tracker.zzz_not_used.database.HelpFactory;
 
 // is announced only to hold all aou components singular \
 public class MyApp extends Application {
@@ -19,4 +20,4 @@ public class MyApp extends Application {
         HelpFactory.releaseHelper();
         super.onTerminate();
     }
-}
+}*/

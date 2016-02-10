@@ -1,4 +1,4 @@
-package com.mol.muleteer.entity_description;
+package com.solveast.gps_tracker.entity_description;
 
 import com.google.gson.annotations.SerializedName;
 

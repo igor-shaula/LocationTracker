@@ -1,6 +1,6 @@
 <resources>
 
-   <string name="app_name">Muleteer</string>
+   <string name="app_name">GPS-tracker</string>
    <string name="title_activity_qr">QrActivity</string>
    <string name="sampleText">text for switch</string>
 
@@ -11,9 +11,9 @@
    <string name="inetStatus">Connection status</string>
 
    <string name="gpsDataOff">Launch tracking to get coordinates</string>
-   <string name="gpsTimeOff">And time of taking location info</string>
+   <string name="gpsTimeOff">and time of taking location info</string>
    <string name="gpsDataOn">Soon you will get coordinates…</string>
-   <string name="gpsTimeOn">And time of metering as well…</string>
+   <string name="gpsTimeOn">and time of metering as well…</string>
 
    <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
    <string name="oldQR_CodeIsKept">This QR-code is already in use</string>
