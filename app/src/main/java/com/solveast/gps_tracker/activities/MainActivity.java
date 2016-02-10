@@ -31,9 +31,7 @@ import com.solveast.gps_tracker.service.MuleteerService;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
-   
-   private final String SHARED_PREFERENCES_QR_KEY = "shared preferences key for QR-code";
-   
+
    private AppCompatTextView actvGpsStatus;
    private AppCompatTextView actvInetStatus;
    private AppCompatTextView actvGpsData;
@@ -108,7 +106,9 @@ public class MainActivity extends AppCompatActivity {
       accentColor = Color.parseColor("#00BCD4");
       
       // 0 = setting QR-code and its view \
-      qrFromSP = getPreferences(MODE_PRIVATE).getString(SHARED_PREFERENCES_QR_KEY, "");
+      qrFromSP = getSharedPreferences(GlobalKeys.SHARED_PREFERENCES_NAME, MODE_PRIVATE)
+               .getString(GlobalKeys.SHARED_PREFERENCES_QR_KEY, "");
+//      qrFromSP = getPreferences(MODE_PRIVATE).getString(GlobalKeys.SHARED_PREFERENCES_QR_KEY, "");
       setAcbScanQr();
       
       // 1 = checking if the service has already being running at the start of this activity \
@@ -331,6 +331,8 @@ public class MainActivity extends AppCompatActivity {
          case GlobalKeys.P_I_CONNECTION_ON: {
             Log.v("resultCode", "GlobalKeys.P_I_CONNECTION_ON/OFF");
             isInetEnabled();
+            // fixing the bug when inet status updated but GPS - not \
+            isGpsEnabled();
             break;
          }
       } // end of switch-statement \\
@@ -372,8 +374,10 @@ public class MainActivity extends AppCompatActivity {
    } // end of updateGpsData-method \\
    
    private void saveQrToSharedPrefs(String qrFromActivityResult) {
-      SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
-      sharedPreferences.edit().clear().putString(SHARED_PREFERENCES_QR_KEY, qrFromActivityResult).apply();
+      SharedPreferences sharedPreferences = getSharedPreferences(GlobalKeys.SHARED_PREFERENCES_NAME, MODE_PRIVATE);
+//      SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
+      sharedPreferences.edit().clear().
+               putString(GlobalKeys.SHARED_PREFERENCES_QR_KEY, qrFromActivityResult).apply();
       // informing the user about change in qr-code \
       vibrator.vibrate(100);
    }

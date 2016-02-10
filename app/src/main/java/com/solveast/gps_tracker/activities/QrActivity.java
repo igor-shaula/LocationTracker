@@ -38,8 +38,8 @@ public class QrActivity extends Activity implements ZXingScannerView.ResultHandl
    public void handleResult(Result rawResult) {
 
       String resultString = rawResult.getText();
-      Log.v("handleResult", resultString);
-      Log.v("handleResult", rawResult.getBarcodeFormat().toString());
+      Log.v("handleResult", "" + resultString);
+      Log.v("handleResult", "" + rawResult.getBarcodeFormat().toString());
 
       Intent resultIntent = new Intent();
       resultIntent.putExtra(GlobalKeys.EXTRA_QR_RESULT, resultString);

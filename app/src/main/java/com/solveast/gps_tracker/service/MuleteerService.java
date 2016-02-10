@@ -38,7 +38,7 @@ import okhttp3.Response;
 public class MuleteerService extends Service {
 
    private final static long MIN_PERIOD_MILLISECONDS = 5 * 1000;
-   private final static float MIN_DISTANCE_IN_METERS = 25;
+   private final static float MIN_DISTANCE_IN_METERS = 10;
 
    private LocationManager locationManager;
    private ConnectivityManager connectivityManager;
@@ -85,14 +85,25 @@ public class MuleteerService extends Service {
 
       // now starting service as from zero \
       pendingIntent = intent.getParcelableExtra(GlobalKeys.PENDING_INTENT_KEY);
+      // when service is restarted after reboot - intent is empty \
+      if (pendingIntent == null) pendingIntent = PendingIntent.
+               getActivity(getApplicationContext(), 1, new Intent(), 0);
+
       qrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
-      Log.d("getStringExtra", qrFromActivity);
+      // when service is restarted after reboot - intent is empty \
+      if (qrFromActivity == null)
+         qrFromActivity = getApplicationContext().
+                  getSharedPreferences(GlobalKeys.SHARED_PREFERENCES_NAME, MODE_PRIVATE).
+                  getString(GlobalKeys.SHARED_PREFERENCES_QR_KEY, "");
+      Log.d("getStringExtra", "" + qrFromActivity);
+/*
       // service should not work without QR supplied \
-      if (qrFromActivity == null) {
+      if (qrFromActivity == null) { // now it cannot be null \
          stopSelf();
       }
+*/
       // main job for the service \
-      trackGps();
+      gpsTrackingStart();
       return Service.START_REDELIVER_INTENT;
    }
 
@@ -105,7 +116,7 @@ public class MuleteerService extends Service {
 
 // service lifecycle ended \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
-   public void trackGps() {
+   public void gpsTrackingStart() {
 
       locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
       connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
@@ -244,7 +255,7 @@ public class MuleteerService extends Service {
       Gson gson = new GsonBuilder().create();
 
       String jsonToSend = gson.toJson(driverData, DriverData.class);
-      Log.d("jsonToSend", jsonToSend);
+      Log.d("jsonToSend", "" + jsonToSend);
 
       MediaType JSON = MediaType.parse("application/json; charset=utf-8");
 
@@ -260,16 +271,16 @@ public class MuleteerService extends Service {
       okHttpClient.newCall(request).enqueue(new Callback() {
          @Override
          public void onFailure(Call call, IOException e) {
-            Log.d("onFailure", e.getMessage());
+            Log.d("onFailure", "" + call.request().method());
          }
 
          @Override
          public void onResponse(Call call, Response response) throws IOException {
-            Log.d("onResponse", response.message());
+            Log.d("onResponse", "" + response.message());
             if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
             else {
-               Log.d("onResponse", call.request().toString());
-               Log.d("onResponse", call.request().body().contentType().toString());
+               Log.d("onResponse", "" + call.request().toString());
+               Log.d("onResponse", "" + call.request().body().contentType().toString());
             }
          }
 /*
