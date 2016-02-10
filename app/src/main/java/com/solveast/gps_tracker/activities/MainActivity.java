@@ -12,6 +12,7 @@ import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
@@ -53,6 +54,8 @@ public class MainActivity extends AppCompatActivity {
    
    private LocationManager locationManager;
    private ConnectivityManager connectivityManager;
+
+   Vibrator vibrator;
    
    @Override
    protected void onCreate(Bundle savedInstanceState) {
@@ -69,12 +72,15 @@ public class MainActivity extends AppCompatActivity {
       
       acbScanQR = (AppCompatButton) findViewById(R.id.acb_ScanQR);
       scTrackingStatus = (SwitchCompat) findViewById(R.id.sc_TrackingStatus);
-      
+
+      vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
       scTrackingStatus.setOnCheckedChangeListener(
                new CompoundButton.OnCheckedChangeListener() {
                   
                   @Override
                   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                     // getting some touch feedback about start/stop action \
+                     vibrator.vibrate(100);
                      // TODO: 08.02.2016 avoid changing data for null coordinates and time \
                      if (isChecked) {
                         startTracking();
@@ -277,7 +283,7 @@ public class MainActivity extends AppCompatActivity {
       switch (resultCode) {
          // result from QrActivity \
          case GlobalKeys.QR_ACTIVITY_KEY: {
-            Log.v("onActivityResult", "resultCode == RESULT_OK");
+            Log.v("resultCode", "GlobalKeys.QR_ACTIVITY_KEY");
             if (data != null) {
                Log.v("onActivityResult", "data != null");
                String newQrCode = data.getStringExtra(GlobalKeys.EXTRA_QR_RESULT);
@@ -316,12 +322,14 @@ public class MainActivity extends AppCompatActivity {
          }
          // result about GPS from service - incoming intent available \
          case GlobalKeys.P_I_CODE_DATA_FROM_GPS: {
+            Log.v("resultCode", "GlobalKeys.P_I_CODE_DATA_FROM_GPS");
             updateGpsData(data); // data from GPS is obtained and the service is running \
             break;
          }
          // result about the state of connection from service - just to update \
          case GlobalKeys.P_I_CONNECTION_OFF:
          case GlobalKeys.P_I_CONNECTION_ON: {
+            Log.v("resultCode", "GlobalKeys.P_I_CONNECTION_ON/OFF");
             isInetEnabled();
             break;
          }
@@ -366,5 +374,7 @@ public class MainActivity extends AppCompatActivity {
    private void saveQrToSharedPrefs(String qrFromActivityResult) {
       SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
       sharedPreferences.edit().clear().putString(SHARED_PREFERENCES_QR_KEY, qrFromActivityResult).apply();
+      // informing the user about change in qr-code \
+      vibrator.vibrate(100);
    }
 }
