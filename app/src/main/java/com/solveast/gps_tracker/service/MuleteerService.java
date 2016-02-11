@@ -37,7 +37,7 @@ import okhttp3.Response;
 
 public class MuleteerService extends Service {
 
-   private final static long MIN_PERIOD_MILLISECONDS = 5 * 1000;
+   private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
    private final static float MIN_DISTANCE_IN_METERS = 10;
 
    private LocationManager locationManager;
@@ -145,61 +145,63 @@ public class MuleteerService extends Service {
       @Override
       public void onProviderDisabled(String provider) {
          Log.d("onProviderDisabled", "happened");
-         checkInternet();
-
-         // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                  Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED &&
-                  ActivityCompat.checkSelfPermission(getApplicationContext(),
-                           Manifest.permission.ACCESS_COARSE_LOCATION)
-                           != PackageManager.PERMISSION_GRANTED) {
-            return;
-         }
-         showLocation(locationManager.getLastKnownLocation(provider)); // 100
+         reactOnLocationListener(provider, null);
       }
 
       @Override
       public void onProviderEnabled(String provider) {
          Log.d("onProviderEnabled", "started");
-         checkInternet();
-
-         // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                  Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED &&
-                  ActivityCompat.checkSelfPermission(getApplicationContext(),
-                           Manifest.permission.ACCESS_COARSE_LOCATION)
-                           != PackageManager.PERMISSION_GRANTED) {
-            return;
-         }
-         showLocation(locationManager.getLastKnownLocation(provider)); // 100
+         reactOnLocationListener(provider, null);
       }
 
       @Override
       public void onStatusChanged(String provider, int status, Bundle extras) {
          Log.d("onStatusChanged", "started");
-         checkInternet();
-
-         // this check is required by IDE \
-         if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-                  Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED &&
-                  ActivityCompat.checkSelfPermission(getApplicationContext(),
-                           Manifest.permission.ACCESS_COARSE_LOCATION)
-                           != PackageManager.PERMISSION_GRANTED) {
-            return;
-         }
-         showLocation(locationManager.getLastKnownLocation(provider)); // 100
+         reactOnLocationListener(provider, null);
       }
 
       @Override
-      public void onLocationChanged(Location location) {
+      public void onLocationChanged(Location newLocation) {
          Log.d("onLocationChanged", "started");
-         checkInternet();
-         showLocation(location);
+         reactOnLocationListener(null, newLocation);
+//         showLocation(newLocation); // contains checkInternet() inside \
       }
    }; // new LocationListener nameless class description ended \
+
+   private void reactOnLocationListener(String provider, Location newLocation) {
+      // only one location point - for only one line of network requests \
+      Location location;
+
+      // this check is required by IDE \
+      if (ActivityCompat.checkSelfPermission(getApplicationContext(),
+               Manifest.permission.ACCESS_FINE_LOCATION)
+               != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
+         return;
+      }
+      if (provider == null) location = newLocation;
+      else location = locationManager.getLastKnownLocation(provider);
+
+      if (location != null) {
+         latitude = location.getLatitude();
+         longitude = location.getLongitude();
+         timeTaken = location.getTime();
+      }
+      // first we have to check internet availability and inform activity about it \
+      if (checkInternet()) sendInfoToServer(); // this is the last action for service job \
+      // creation and two puts are made with one line here \
+      Intent intentToReturn = new Intent()
+               .putExtra(GlobalKeys.GPS_LATITUDE, latitude)
+               .putExtra(GlobalKeys.GPS_LONGITUDE, longitude)
+               .putExtra(GlobalKeys.GPS_TAKING_TIME, timeTaken);
+      try {
+         pendingIntent.send(this, GlobalKeys.P_I_CODE_DATA_FROM_GPS, intentToReturn); // -100
+      } catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
+   }
 
    private boolean checkInternet() {
 
@@ -223,28 +225,6 @@ public class MuleteerService extends Service {
       }
    }
 
-   private void showLocation(Location location) {
-      if (location == null)
-         return;
-
-      latitude = location.getLatitude();
-      longitude = location.getLongitude();
-      timeTaken = location.getTime();
-
-      // first we have to check internet availability and inform activity about it \
-      if (checkInternet()) sendInfoToServer(); // this is the last action for service job \
-      // creation and two puts are made with one line here \
-      Intent intentToReturn = new Intent()
-               .putExtra(GlobalKeys.GPS_LATITUDE, latitude)
-               .putExtra(GlobalKeys.GPS_LONGITUDE, longitude)
-               .putExtra(GlobalKeys.GPS_TAKING_TIME, timeTaken);
-      try {
-         pendingIntent.send(this, GlobalKeys.P_I_CODE_DATA_FROM_GPS, intentToReturn); // -100
-      } catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
-   }
-
    // my Retrofit usage to send tracking data to the server \
    public void sendInfoToServer() {
       Log.d("sendInfoToServer", "started");
@@ -264,6 +244,7 @@ public class MuleteerService extends Service {
       Request request = new Request.Builder()
                .url("http://" + qrFromActivity)
                .post(body)
+//               .cacheControl(new CacheControl.Builder().noCache().build())
                .build();
 
       OkHttpClient okHttpClient = new OkHttpClient();
@@ -272,18 +253,29 @@ public class MuleteerService extends Service {
          @Override
          public void onFailure(Call call, IOException e) {
             Log.d("onFailure", "" + call.request().method());
+            Log.d("onFailure", "" + call.request().toString());
+            Log.d("onFailure", "" + call.request().body().contentType().toString());
          }
 
          @Override
          public void onResponse(Call call, Response response) throws IOException {
             Log.d("onResponse", "" + response.message());
-            if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
-            else {
+            if (response.isSuccessful()) {
+               Log.d("onResponse", "successfull - OkHTTP");
+               Log.d("onResponse", response.body().string());
+               Log.d("onResponse", response.body().toString());
+               Log.d("onResponse", response.body().contentType().toString());
+            } else {
                Log.d("onResponse", "" + call.request().toString());
                Log.d("onResponse", "" + call.request().body().contentType().toString());
+               String sFromResponse = response.body().string();
+               Log.d("sFromResponse", sFromResponse);
+
+               Log.d("sFromResponse", response.message());
             }
          }
 /*
+// realization with Retrofit library remains
          @Override
          public void onFailure(Request request, IOException e) {
             Log.d("onFailure", request.toString());
