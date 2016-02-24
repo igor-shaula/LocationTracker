@@ -1,7 +1,10 @@
-package com.solveast.gps_tracker.entity_description;
+package com.solveast.gps_tracker.entity;
 
 import com.google.gson.annotations.SerializedName;
 
+/**
+ * Created by igor shaula
+ */
 public class DriverData {
 
    @SerializedName("lat")

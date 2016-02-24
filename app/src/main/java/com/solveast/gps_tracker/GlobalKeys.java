@@ -5,16 +5,16 @@ package com.solveast.gps_tracker;
  */
 public class GlobalKeys {
 
-   public static final String LOCAL_BROADCAST_SERVICE_CHECK = "com.mol.gps_tracker - check service state";
-   public static final String START_SERVICE_CHECK = "checking the state of the service at the start of activity";
-   public static final String SHARED_PREFERENCES_NAME = "url from qrCode";
-   public static final String SHARED_PREFERENCES_QR_KEY = "shared preferences key for QR-code";
-   public static final String PENDING_INTENT_KEY = "pendingIntent";
-   public static final String EXTRA_QR_RESULT = "QrResult";
+   public static final String S_P_NAME = "url from qrCode";
+   public static final String S_P_QR_KEY = "shared preferences key for QR-code";
+   public static final String P_I_KEY = "pendingIntent";
+   public static final String QR_RESULT = "QrResult";
    public static final String QR_KEY = "QR-code key";
+   public static final String QR_KEY_INVALID = "QR-code key is not valid";
 
    public static final int QR_ACTIVITY_KEY = 10;
    public static final int P_I_CODE_DATA_FROM_GPS = 100;
+   public static final int P_I_CODE_QR_KEY_INVALID = -100;
    public static final int P_I_CONNECTION_OFF = 201;
    public static final int P_I_CONNECTION_ON = 202;
 

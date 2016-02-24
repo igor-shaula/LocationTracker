@@ -7,7 +7,7 @@
    <style name="AppTheme.NoActionBar">
       <item name="windowActionBar">false</item>
       <item name="windowNoTitle">true</item>
-      <item name="android:windowBackground">@color/myTransparent</item>
+      <item name="android:windowBackground">@android:color/transparent</item>
    </style>
 
    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
@@ -20,7 +20,7 @@
       <item name="android:paddingLeft">@dimen/size_16</item>
       <item name="android:paddingRight">@dimen/size_16</item>
       <item name="android:textSize">@dimen/textSize</item>
-      <item name="android:textColor">@color/myWhite</item>
+      <item name="android:textColor">@android:color/white</item>
       <item name="android:background">@drawable/my_rounded_button_shape_dark</item>
    </style>
 
@@ -31,7 +31,7 @@
    </style>
 
    <style name="MyText.Big">
-      <item name="android:textColor">@color/secondaryText</item>
+      <item name="android:textColor">@color/secondary_text</item>
       <item name="android:textSize">@dimen/bigTextSize</item>
    </style>
 

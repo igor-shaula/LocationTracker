@@ -17,6 +17,7 @@
 
    <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
    <string name="oldQR_CodeIsKept">This QR-code is already in use</string>
+   <string name="invalidQR_Code">This QR-code cannot be used!</string>
 
    <string name="gpsEnabled">GPS enabled</string>
    <string name="gpsDisabled">GPS disabled</string>

@@ -3,10 +3,10 @@ package com.solveast.gps_tracker.activities;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.zxing.Result;
 import com.solveast.gps_tracker.GlobalKeys;
+import com.solveast.gps_tracker.MyLog;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
@@ -38,11 +38,11 @@ public class QrActivity extends Activity implements ZXingScannerView.ResultHandl
    public void handleResult(Result rawResult) {
 
       String resultString = rawResult.getText();
-      Log.v("handleResult", "" + resultString);
-      Log.v("handleResult", "" + rawResult.getBarcodeFormat().toString());
+      MyLog.v("handleResult: " + resultString);
+      MyLog.v("handleResult: " + rawResult.getBarcodeFormat().toString());
 
       Intent resultIntent = new Intent();
-      resultIntent.putExtra(GlobalKeys.EXTRA_QR_RESULT, resultString);
+      resultIntent.putExtra(GlobalKeys.QR_RESULT, resultString);
       setResult(GlobalKeys.QR_ACTIVITY_KEY, resultIntent);
       finish();
    }

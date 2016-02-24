@@ -1,11 +1,11 @@
-package com.solveast.gps_tracker.broadcast_receiver;
+package com.solveast.gps_tracker.receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
 
-import com.solveast.gps_tracker.service.MuleteerService;
+import com.solveast.gps_tracker.MyLog;
+import com.solveast.gps_tracker.service.MainService;
 
 /**
  * Created by igor shaula
@@ -13,7 +13,7 @@ import com.solveast.gps_tracker.service.MuleteerService;
 public class BootReceiver extends BroadcastReceiver {
    @Override
    public void onReceive(Context context, Intent intent) {
-      context.startService(new Intent(context, MuleteerService.class));
-      Log.d("onReceive", "worked = service is launched");
+      context.startService(new Intent(context, MainService.class));
+      MyLog.v("onReceive worked = service is launched");
    }
 }
