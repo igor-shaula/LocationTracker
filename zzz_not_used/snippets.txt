@@ -1,0 +1,183 @@
+/*
+   public void connectSample(View view) {
+
+      // Create a very simple REST adapter which points the GitHub API endpoint.
+      GitHubClient client = ServiceGenerator.createService(GitHubClient.class);
+
+      // Fetch and print a list of the getContributors to this library.
+      Call<List<Contributor>> call = client.getContributors("fs_opensource", "android-boilerplate");
+
+      final List<Contributor>[] contributorList = new List[1];
+
+      call.enqueue(new Callback<List<Contributor>>() {
+         @Override
+         public void onResponse(Response<List<Contributor>> response) {
+            okhttp3.Response raw = response.raw();
+            Log.d("Retrofit sample", raw.toString());
+            if (response.isSuccess()) {
+               contributorList[0] = response.body();
+               Log.d("Retrofit sample", "onResponse is successfull");
+            } else
+               Log.d("Retrofit sample", "onResponse is NOT successfull");
+         }
+
+         @Override
+         public void onFailure(Throwable t) {
+            Log.d("Retrofit sample", "onFailure");
+         }
+      });
+
+      if (contributorList[0] != null) {
+         Log.d("Retrofit sample", "contributorList[0] != null");
+
+         for (Contributor contributor : contributorList[0]) {
+            Log.d("Retrofit sample", "" + contributor.login + " (" + contributor.contributions + ")");
+         }
+      } else Log.d("Retrofit sample", "contributorList[0] is null");
+   } // end of sample for Retrofit connection method \\
+*/
+----------------------------------------------------------------
+/*
+   // SharedPreferences are to be avoided in favor of database \
+
+    private void saveQrInPreferences(String qr){
+        sPref = getPreferences(MODE_PRIVATE);
+        SharedPreferences.Editor ed = sPref.edit();
+        ed.clear();
+        ed.putString(SAVED_QR, qr);
+        ed.commit();
+    }
+
+    private String loadQrFromPreferences(){
+        sPref = getPreferences(MODE_PRIVATE);
+        //Toast.makeText(this, savedQr, Toast.LENGTH_SHORT).show();
+        return sPref.getString(SAVED_QR, "");
+    }
+*/
+---------------------------------------------------------------------
+/*
+   private void saveToTheDb(String qrCode) {
+      DriverData driverData = new DriverData();
+      driverData.setQr(qrCode);
+      HelpFactory.getDatabaseHelper().getDriverDao().addNewDriverData(driverData);
+      Log.d("saveToTheDb", "worked");
+      Toast.makeText(this, QR_CODE_IS_TAKEN, Toast.LENGTH_SHORT).show();
+      Toast.makeText(this, QR_IS_SAVED, Toast.LENGTH_SHORT).show();
+   }
+
+   public String loadQrFromDb() {
+      DriverData driverData = HelpFactory.getDatabaseHelper().getDriverDao().getDriverData();
+      if (driverData == null) {
+         Log.d("loadQrFromDb", "driverData is null");
+         return "";
+      }
+      acb_ScanQR.setTextColor(textColorChanged);
+      acb_ScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape);
+      return HelpFactory.getDatabaseHelper().getDriverDao().getDriverData().getQr();
+   }
+*/
+/*
+// realization with Retrofit library remains - inside sendInfoToServer() \
+         @Override
+         public void onFailure(Request request, IOException e) {
+            Log.d("onFailure", request.toString());
+         }
+
+         @Override
+         public void onResponse(okhttp3.Response response) throws IOException {
+            Log.d("onResponse", response.message());
+            if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
+            else Log.d("onResponse", "is not successfull - OkHTTP");
+         }
+*/
+// Retrofit actually doesn't work and is successfully replaced by OkHTTP ///////////////////////////
+/*
+      // using our service class for creation of interface object \
+      MyRetrofitInterface myRetrofitInterface = MyServiceGenerator.createService(MyRetrofitInterface.class);
+
+      // retrofit requires the base URL to be separated - let's do it \
+      int dividerPosition = 0;
+      for (int i = 2; i < qrFromActivity.length(); i++) {
+         if (qrFromActivity.charAt(i) == '/') {
+            dividerPosition = i;
+            break;
+         }
+      }
+      String uriForCall = qrFromActivity.substring(dividerPosition);
+      Log.d("uriForCall", uriForCall);
+
+      // preparing the network access object - the call \
+      Call<DriverData> driverDataCall = myRetrofitInterface.makeDriverDataCall(uriForCall, driverData);
+
+      // performing the network connection itself \
+      driverDataCall.enqueue(new Callback<DriverData>() {
+
+         @Override
+         public void onResponse(Response<DriverData> response) {
+            Log.d("onResponse", response.message());
+            if (response.isSuccess()) {
+               Log.d("onResponse", "is successfull - Retrofit");
+            } else {
+               Log.d("onResponse", "is not successfull - Retrofit");
+               Log.d("onResponse", "" + response.code());
+               Log.d("onResponse", response.message());
+            }
+         }
+
+         @Override
+         public void onFailure(Throwable t) {
+            Log.d("onFailure", "happened - Retrofit");
+            t.printStackTrace();
+         }
+      });
+*/
+/*
+   private boolean checkIfServiceAlive() { // currently makes no effect - why ???
+      // by default we assue service to be dead \
+      final boolean[] result = {false};
+
+      // preparing listener to receive the answer from the service \
+      broadcastReceiver = new BroadcastReceiver() {
+         @Override
+         public void onReceive(Context context, Intent intent) {
+            // here received value has to be changed to true if service is OK \
+            if (intent.getBooleanExtra(GlobalKeys.START_SERVICE_CHECK, false))
+               result[0] = true;
+         }
+      };
+      IntentFilter intentFilter = new IntentFilter(GlobalKeys.LOCAL_BROADCAST_SERVICE_CHECK);
+      localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter);
+
+      return result[0];
+   }
+*/
+/*
+   @Override
+   public void onCreate() {
+      super.onCreate();
+      MyLog.v("onCreate worked = service is born");
+      localBroadcastManager = LocalBroadcastManager.getInstance(this);
+   }
+*/
+/*
+      // first we have to answer the calling activity if the service is started \
+      broadcastReceiver = new BroadcastReceiver() {
+         @Override
+         public void onReceive(Context context, Intent intent) {
+            if (intent.getBooleanExtra(GlobalKeys.START_SERVICE_CHECK, false)) {
+               intent.putExtra(GlobalKeys.START_SERVICE_CHECK, true);
+               localBroadcastManager.sendBroadcast(intent);
+            }
+         }
+      };
+      IntentFilter intentFilter = new IntentFilter(GlobalKeys.LOCAL_BROADCAST_SERVICE_CHECK);
+      localBroadcastManager.registerReceiver(broadcastReceiver, intentFilter);
+*/
+/*
+   @Override
+   public void onDestroy() {
+      super.onDestroy();
+      MyLog.v("onDestroy worked = service is dead");
+      localBroadcastManager.unregisterReceiver(broadcastReceiver);
+   }
+*/
