@@ -212,7 +212,7 @@ public class MainService extends Service {
 
       try {
          Request request = new Request.Builder()
-               .url("http://" + qrFromActivity)
+               .url(qrFromActivity)
 //               .cacheControl(new CacheControl.Builder().noCache().build()) // no effect \
                .post(body)
                .build();
