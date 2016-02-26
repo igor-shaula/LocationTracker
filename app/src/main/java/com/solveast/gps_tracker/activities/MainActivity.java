@@ -100,6 +100,7 @@ public class MainActivity extends AppCompatActivity {
       // 0 = setting QR-code and its view \
       qrFromSP = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE)
             .getString(GlobalKeys.S_P_QR_KEY, "");
+      MyLog.v("getSharedPreferences: " + qrFromSP);
 //      qrFromSP = getPreferences(MODE_PRIVATE).getString(GlobalKeys.S_P_QR_KEY, "");
       setScanQrButtonStatus();
 

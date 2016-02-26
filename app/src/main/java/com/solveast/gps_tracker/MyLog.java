@@ -1,15 +1,17 @@
 package com.solveast.gps_tracker;
 
+import android.util.Log;
+
 public class MyLog {
 
-//    private static final String TAG = "LOG";
+    private static final String TAG = "LOG";
 
     public static void v(String message) {
-//        Log.v(TAG, message);
+        Log.v(TAG, message);
     }
 
     public static void d(String message) {
-//        Log.d(TAG, message);
+        Log.d(TAG, message);
     }
 
     public static void i(String message) {

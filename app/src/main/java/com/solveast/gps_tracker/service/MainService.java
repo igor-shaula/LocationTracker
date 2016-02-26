@@ -100,7 +100,7 @@ public class MainService extends Service {
                getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE).
                getString(GlobalKeys.S_P_QR_KEY, "");
       // we assume that QR-code contains valid web URL inside \
-      MyLog.v("getStringExtra" + qrFromActivity);
+      MyLog.v("getStringExtra: " + qrFromActivity);
 
       // main job for the service \
       gpsTrackingStart();
@@ -129,7 +129,8 @@ public class MainService extends Service {
                MIN_DISTANCE_IN_METERS,
                locationListener);
       }
-//      sendInfoToServer(); // just for testing purpose \
+      // just for testing purpose and to check the URL at the service start \
+      sendInfoToServer();
    }
 
    private void reactOnLocationListener(String provider, Location newLocation) {
