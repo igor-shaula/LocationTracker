@@ -21,4 +21,5 @@ public class GlobalKeys {
    public static final String GPS_LATITUDE = "latitude received from GPS via service";
    public static final String GPS_LONGITUDE = "longitude received from GPS via service";
    public static final String GPS_TAKING_TIME = "time of taking coordinates from GPS via service";
+   public static final String DISTANCE = "total distance in meters, calculated with location data";
 }

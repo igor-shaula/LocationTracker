@@ -35,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
    private AppCompatTextView actvInetStatus;
    private AppCompatTextView actvGpsData;
    private AppCompatTextView actvGpsTime;
+   private AppCompatTextView actvDistance;
 
    private String qrFromSP;
    private int whiteColor;
@@ -64,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
       actvInetStatus = (AppCompatTextView) findViewById(R.id.actv_InetStatus);
       actvGpsData = (AppCompatTextView) findViewById(R.id.actv_GpsData);
       actvGpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
+      actvDistance = (AppCompatTextView) findViewById(R.id.actvDistance);
 
       vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -315,6 +317,9 @@ public class MainActivity extends AppCompatActivity {
          calendar.setTimeInMillis(timeOfTakingCoordinates);
          String stringTime = calendar.getTime().toString();
          actvGpsTime.setText(String.valueOf("Time: " + stringTime));
+
+         int distance = data.getIntExtra(GlobalKeys.DISTANCE, 0);
+         actvDistance.setText(String.valueOf("Distance: " + distance + " m"));
 
          actvGpsData.setTextColor(accentColor);
          actvGpsTime.setTextColor(accentColor);

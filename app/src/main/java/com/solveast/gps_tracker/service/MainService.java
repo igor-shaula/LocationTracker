@@ -19,10 +19,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.solveast.gps_tracker.GlobalKeys;
 import com.solveast.gps_tracker.MyLog;
-import com.solveast.gps_tracker.entity.DriverData;
+import com.solveast.gps_tracker.entity.LocationPoint;
 
 import java.io.IOException;
 
+import io.realm.Realm;
+import io.realm.RealmConfiguration;
+import io.realm.RealmResults;
 import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.MediaType;
@@ -44,6 +47,8 @@ public class MainService extends Service {
 
    private LocationManager locationManager;
    private ConnectivityManager connectivityManager;
+
+   private Realm realm; // instance of the database \
 
    // definition of special object for listener \
    private LocationListener locationListener = new LocationListener() {
@@ -97,10 +102,23 @@ public class MainService extends Service {
       if (qrFromActivity == null)
          // just restoring the data from shared preferances \
          qrFromActivity = getApplicationContext().
-               getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE).
-               getString(GlobalKeys.S_P_QR_KEY, "");
+                  getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE).
+                  getString(GlobalKeys.S_P_QR_KEY, "");
       // we assume that QR-code contains valid web URL inside \
       MyLog.v("getStringExtra: " + qrFromActivity);
+
+      // Create the Realm configuration
+      RealmConfiguration realmConfig = new RealmConfiguration
+               .Builder(this)
+               .deleteRealmIfMigrationNeeded()
+               .build();
+      // Open the Realm for the UI thread.
+      realm = Realm.getInstance(realmConfig);
+
+      // temporary crutch - clearing the database to get proper distance \
+      realm.beginTransaction();
+      realm.where(LocationPoint.class).findAll().deleteAllFromRealm();
+      realm.commitTransaction();
 
       // main job for the service \
       gpsTrackingStart();
@@ -116,18 +134,18 @@ public class MainService extends Service {
 
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(this,
-            Manifest.permission.ACCESS_COARSE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(this,
-                  Manifest.permission.ACCESS_FINE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED) {
+               Manifest.permission.ACCESS_COARSE_LOCATION)
+               != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
          MyLog.v("permissions are not set well");
       } else {
          locationManager.requestLocationUpdates(
-               LocationManager.GPS_PROVIDER,
-               MIN_PERIOD_MILLISECONDS,
-               MIN_DISTANCE_IN_METERS,
-               locationListener);
+                  LocationManager.GPS_PROVIDER,
+                  MIN_PERIOD_MILLISECONDS,
+                  MIN_DISTANCE_IN_METERS,
+                  locationListener);
       }
       // just for testing purpose and to check the URL at the service start \
       sendInfoToServer();
@@ -139,11 +157,11 @@ public class MainService extends Service {
 
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-            Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED &&
-            ActivityCompat.checkSelfPermission(getApplicationContext(),
-                  Manifest.permission.ACCESS_COARSE_LOCATION)
-                  != PackageManager.PERMISSION_GRANTED) {
+               Manifest.permission.ACCESS_FINE_LOCATION)
+               != PackageManager.PERMISSION_GRANTED &&
+               ActivityCompat.checkSelfPermission(getApplicationContext(),
+                        Manifest.permission.ACCESS_COARSE_LOCATION)
+                        != PackageManager.PERMISSION_GRANTED) {
          return;
       }
       if (provider == null) location = newLocation;
@@ -154,14 +172,72 @@ public class MainService extends Service {
          longitude = location.getLongitude();
          timeTaken = location.getTime();
       }
+      saveToDB(latitude, longitude, timeTaken);
+
       // first we have to check internet availability and inform activity about it \
       if (checkInternet()) sendInfoToServer(); // this is the last action for service job \
       // creation and two puts are made with one line here \
+
+      RealmResults<LocationPoint> locationPointList = realm.where(LocationPoint.class).findAll();
       Intent intentToReturn = new Intent()
-            .putExtra(GlobalKeys.GPS_LATITUDE, latitude)
-            .putExtra(GlobalKeys.GPS_LONGITUDE, longitude)
-            .putExtra(GlobalKeys.GPS_TAKING_TIME, timeTaken);
+               .putExtra(GlobalKeys.GPS_LATITUDE, latitude)
+               .putExtra(GlobalKeys.GPS_LONGITUDE, longitude)
+               .putExtra(GlobalKeys.GPS_TAKING_TIME, timeTaken)
+               .putExtra(GlobalKeys.DISTANCE, getTotalDistance(locationPointList));
       sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
+   }
+
+   // saving to database - realized with RealM \
+   private void saveToDB(double latitude, double longitude, long timeTaken) {
+
+      // All writes must be wrapped in a transaction to facilitate safe multi threading
+      realm.beginTransaction();
+
+      LocationPoint locationPoint = realm.createObject(LocationPoint.class);
+      locationPoint.setLatitude(latitude);
+      locationPoint.setLongitude(longitude);
+      locationPoint.setTime(timeTaken);
+
+      // When the transaction is committed, all changes a synced to disk.
+      realm.commitTransaction();
+   }
+
+   private int getTotalDistance(RealmResults<LocationPoint> locationPointList) {
+
+      int capacity = locationPointList.size();
+      MyLog.i("capacity = " + capacity);
+
+      // preparing rewritable containers for the following loop \
+      LocationPoint startPoint, endPoint;
+      double startLat, startLong, endLat, endLong;
+      float[] resultArray = new float[1];
+      float totalDistanceInMeters = 0;
+
+      // getting all data and receiving numbers at every step \
+      for (int i = 0; i < capacity; i++) {
+         // all works only if there are more than one point at all \
+         if (locationPointList.iterator().hasNext()) {
+            MyLog.i("hasNext & i = " + i);
+
+            startPoint = locationPointList.get(i);
+            startLat = startPoint.getLatitude();
+            startLong = startPoint.getLongitude();
+            endPoint = locationPointList.iterator().next();
+            endLat = endPoint.getLatitude();
+            endLong = endPoint.getLongitude();
+
+            // we have to measure distance only between real points - not zeroes \
+            if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
+               MyLog.i("all four != 0");
+
+               // result of calculations is stored inside the resultArray \
+               Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
+               totalDistanceInMeters += resultArray[0];
+            }
+         }
+      }
+
+      return (int) totalDistanceInMeters;
    }
 
    // universal point to send info to MainActivity \
@@ -200,11 +276,11 @@ public class MainService extends Service {
       MyLog.v("sendInfoToServer = started");
 
       // at first creating object to send to the server \
-      DriverData driverData = new DriverData(latitude, longitude, timeTaken);
+      LocationPoint driverData = new LocationPoint(latitude, longitude, timeTaken);
 
       Gson gson = new GsonBuilder().create();
 
-      String jsonToSend = gson.toJson(driverData, DriverData.class);
+      String jsonToSend = gson.toJson(driverData, LocationPoint.class);
       MyLog.v("jsonToSend: " + jsonToSend);
 
       MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -213,10 +289,10 @@ public class MainService extends Service {
 
       try {
          Request request = new Request.Builder()
-               .url(qrFromActivity)
+                  .url(qrFromActivity)
 //               .cacheControl(new CacheControl.Builder().noCache().build()) // no effect \
-               .post(body)
-               .build();
+                  .post(body)
+                  .build();
 
          OkHttpClient okHttpClient = new OkHttpClient();
 
