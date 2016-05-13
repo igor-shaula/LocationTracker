@@ -10,6 +10,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.provider.Settings;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.AppCompatButton;
@@ -37,16 +38,16 @@ public class MainActivity extends AppCompatActivity {
    private AppCompatTextView actvGpsTime;
    private AppCompatTextView actvDistance;
 
-   private String qrFromSP;
-   private int whiteColor;
-   private int primaryDarkColor;
-   private int primaryTextColor;
-   private int accentColor;
-   private boolean trackingIsOn = false;
+   private String mQrFromSP;
+   private int mWhiteColor;
+   private int mPrimaryDarkColor;
+   private int mPrimaryTextColor;
+   private int mAccentColor;
+   private boolean mTrackingIsOn = false;
 
-   private Vibrator vibrator;
-   private LocationManager locationManager;
-   private ConnectivityManager connectivityManager;
+   private Vibrator mVibrator;
+   private LocationManager mLocationManager;
+   private ConnectivityManager mConnectivityManager;
 
 // LIFECYCLE \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
@@ -67,59 +68,64 @@ public class MainActivity extends AppCompatActivity {
       actvGpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
       actvDistance = (AppCompatTextView) findViewById(R.id.actvDistance);
 
-      vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+      mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
       scTrackingStatus.setOnCheckedChangeListener(
-            new CompoundButton.OnCheckedChangeListener() {
+               new CompoundButton.OnCheckedChangeListener() {
 
-               @Override
-               public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                  // getting some touch feedback about start/stop action \
-                  if (isChecked) {
-                     startTracking();
-                     if (isGpsEnabled() && isInetEnabled()) {
-                        actvGpsData.setText(getString(R.string.gpsDataOn));
-                        actvGpsTime.setText(getString(R.string.gpsTimeOn));
+                  @Override
+                  public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                     // getting some touch feedback about start/stop action \
+                     if (isChecked) {
+                        if (isGpsEnabled()) {
+//                        if (isGpsEnabled() && isInetEnabled()) {
+                           startTracking();
+                           actvGpsData.setText(getString(R.string.gpsDataOn));
+                           actvGpsTime.setText(getString(R.string.gpsTimeOn));
+                        } else {
+                           showSystemScreenForGps();
+                           setTrackingSwitchStatus(false);
+                        }
+                     } else {
+                        stopTracking();
+                        actvGpsData.setText(getString(R.string.gpsDataOff));
+                        actvGpsTime.setText(getString(R.string.gpsTimeOff));
                      }
-                  } else {
-                     stopTracking();
-                     actvGpsData.setText(getString(R.string.gpsDataOff));
-                     actvGpsTime.setText(getString(R.string.gpsTimeOff));
+                     updateGpsData(null);
                   }
-                  updateGpsData(null);
                }
-            }
       );
 /*
        setting the initial state of the buttons depending on QR availlability
        and whether service running state in background at the start of activity \
 */
-      whiteColor = ContextCompat.getColor(this, android.R.color.white);
-      primaryDarkColor = ContextCompat.getColor(this, R.color.primary_dark);
-      primaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
-      accentColor = ContextCompat.getColor(this, R.color.accent);
+      mWhiteColor = ContextCompat.getColor(this, android.R.color.white);
+      mPrimaryDarkColor = ContextCompat.getColor(this, R.color.primary_dark);
+      mPrimaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
+      mAccentColor = ContextCompat.getColor(this, R.color.accent);
 
       // 0 = setting QR-code and its view \
-      qrFromSP = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE)
-            .getString(GlobalKeys.S_P_QR_KEY, "");
-      MyLog.v("getSharedPreferences: " + qrFromSP);
-//      qrFromSP = getPreferences(MODE_PRIVATE).getString(GlobalKeys.S_P_QR_KEY, "");
+      mQrFromSP = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE)
+               .getString(GlobalKeys.S_P_QR_KEY, "");
+      MyLog.v("getSharedPreferences: " + mQrFromSP);
+//      mQrFromSP = getPreferences(MODE_PRIVATE).getString(GlobalKeys.S_P_QR_KEY, "");
       setScanQrButtonStatus();
 
       // 1 = checking if the service has already being running at the start of this activity \
-      if (isMyServiceRunning(MainService.class)) trackingIsOn = true;
-      setTrackingSwitchStatus(trackingIsOn);
+      if (isMyServiceRunning(MainService.class)) mTrackingIsOn = true;
+      setTrackingSwitchStatus(mTrackingIsOn);
 
       // 2 = checking the state of GPS - only to inform user \
-      locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+      mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
       isGpsEnabled();
 
       // 3 = checking the state of internet - only to inform user \
-      connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
       isInetEnabled();
 
       // 4 = this check is necessary for correct application relaunch \
       updateGpsData(null);
+
    } // end of onCreate-method \
 
 // METHODS TO SWITCH STATES OF ALL VIEW ELEMENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
@@ -136,14 +142,14 @@ public class MainActivity extends AppCompatActivity {
    private void setScanQrButtonStatus() {
 
       // setting appearance optimal to show user the state of data \
-      if (!qrFromSP.equals("")) {
+      if (!mQrFromSP.equals("")) {
          acbScanQR.setText(getString(R.string.textForPresentScan));
-         acbScanQR.setTextColor(primaryDarkColor);
+         acbScanQR.setTextColor(mPrimaryDarkColor);
          acbScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape);
          scTrackingStatus.setVisibility(View.VISIBLE);
       } else {
          acbScanQR.setText(getString(R.string.textForNewScan));
-         acbScanQR.setTextColor(whiteColor);
+         acbScanQR.setTextColor(mWhiteColor);
          acbScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape_dark);
          scTrackingStatus.setVisibility(View.INVISIBLE);
       }
@@ -152,70 +158,76 @@ public class MainActivity extends AppCompatActivity {
    private void setTrackingSwitchStatus(boolean statusOn) {
       if (statusOn) {
          scTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOn));
-         scTrackingStatus.setTextColor(primaryDarkColor);
+         scTrackingStatus.setTextColor(mPrimaryDarkColor);
          scTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape);
          scTrackingStatus.setChecked(true);
-         trackingIsOn = true;
+         mTrackingIsOn = true;
          // informing user about this \
-         vibrator.vibrate(100);
+         mVibrator.vibrate(100);
       } else {
          scTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOff));
-         scTrackingStatus.setTextColor(whiteColor);
+         scTrackingStatus.setTextColor(mWhiteColor);
          scTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape_dark);
          scTrackingStatus.setChecked(false);
-         trackingIsOn = false;
+         mTrackingIsOn = false;
       }
    }
 
    private boolean isGpsEnabled() { // also changes appearance of GPS text view \
-      if (locationManager != null) {
-         if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+      if (mLocationManager != null) {
+         if (mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             actvGpsStatus.setText(getString(R.string.gpsEnabled));
-            actvGpsStatus.setTextColor(primaryDarkColor);
+            actvGpsStatus.setTextColor(mPrimaryDarkColor);
             return true;
          } else {
             actvGpsStatus.setText(getString(R.string.gpsDisabled));
-            actvGpsStatus.setTextColor(primaryTextColor);
+            actvGpsStatus.setTextColor(mPrimaryTextColor);
             return false;
          }
       } else {
          actvGpsStatus.setText(getString(R.string.gpsDisabled));
-         actvGpsStatus.setTextColor(primaryTextColor);
-         MyLog.v("locationManager is null");
+         actvGpsStatus.setTextColor(mPrimaryTextColor);
+         MyLog.v("mLocationManager is null");
          return false;
       }
    }
 
    public boolean isInetEnabled() { // also changes appearance of inet info view \
       NetworkInfo networkInfo;
-      if (connectivityManager != null)
-         networkInfo = connectivityManager.getActiveNetworkInfo();
+      if (mConnectivityManager != null)
+         networkInfo = mConnectivityManager.getActiveNetworkInfo();
       else return false;
       if (networkInfo != null) {
          if (networkInfo.isConnected()) {
             actvInetStatus.setText(getString(R.string.inetConnected));
-            actvInetStatus.setTextColor(primaryDarkColor);
+            actvInetStatus.setTextColor(mPrimaryDarkColor);
             return true;
          } else {
             actvInetStatus.setText(getString(R.string.inetDisconnected));
-            actvInetStatus.setTextColor(primaryTextColor);
+            actvInetStatus.setTextColor(mPrimaryTextColor);
             return false;
          }
       } else {
          actvInetStatus.setText(getString(R.string.inetDisconnected));
-         actvInetStatus.setTextColor(primaryTextColor);
-         MyLog.v("connectivityManager is null");
+         actvInetStatus.setTextColor(mPrimaryTextColor);
+         MyLog.v("mConnectivityManager is null");
          return false;
       }
    }
 
 // MAIN SET OF METHODS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
+   private void showSystemScreenForGps() {
+      Toast.makeText(MainActivity.this, "Please switch the GPS on", Toast.LENGTH_SHORT).show();
+      // opening window with system settings for GPS \
+      startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
+   }
+
    public void startTracking() {
-      // preparing intent for qr-code sending \
+      // preparing intent for qr-code sending service \
       PendingIntent pendingIntent = createPendingResult(1, new Intent(), 0);
       Intent intentServiceGps = new Intent(this, MainService.class);
-      intentServiceGps.putExtra(GlobalKeys.QR_KEY, qrFromSP);
+      intentServiceGps.putExtra(GlobalKeys.QR_KEY, mQrFromSP);
       intentServiceGps.putExtra(GlobalKeys.P_I_KEY, pendingIntent);
 
       startService(intentServiceGps);
@@ -250,9 +262,9 @@ public class MainActivity extends AppCompatActivity {
                MyLog.v("onActivityResult  = data != null");
                String newQrCode = data.getStringExtra(GlobalKeys.QR_RESULT);
                // if a new code is acquired \
-               if (!qrFromSP.equals(newQrCode)) {
+               if (!mQrFromSP.equals(newQrCode)) {
                   // updating our QR-code for the next scan \
-                  qrFromSP = newQrCode;
+                  mQrFromSP = newQrCode;
                   // fixing the changes \
                   saveQrToSharedPrefs(newQrCode);
                   // changing the view of scanning button \
@@ -273,7 +285,7 @@ public class MainActivity extends AppCompatActivity {
          // result about GPS from service - incoming intent available \
          case GlobalKeys.P_I_CODE_DATA_FROM_GPS: {
             MyLog.v("resultCode = GlobalKeys.P_I_CODE_DATA_FROM_GPS");
-            if (trackingIsOn)
+            if (mTrackingIsOn)
                updateGpsData(data); // data from GPS is obtained and the service is running \
             break;
          }
@@ -285,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
             // checking and deleting invalid code \
             String invalidQR = data.getStringExtra(GlobalKeys.QR_KEY_INVALID);
             saveQrToSharedPrefs(null);
-            if (qrFromSP.equals(invalidQR)) qrFromSP = "";
+            if (mQrFromSP.equals(invalidQR)) mQrFromSP = "";
             // updating the state of the QR-code button \
             setScanQrButtonStatus();
             break;
@@ -319,14 +331,14 @@ public class MainActivity extends AppCompatActivity {
          actvGpsTime.setText(String.valueOf("Time: " + stringTime));
 
          int distance = data.getIntExtra(GlobalKeys.DISTANCE, 0);
-         actvDistance.setText(String.valueOf("Distance: " + distance + " m"));
+         actvDistance.setText(String.valueOf("Passed distance: " + distance + " m"));
 
-         actvGpsData.setTextColor(accentColor);
-         actvGpsTime.setTextColor(accentColor);
+         actvGpsData.setTextColor(mAccentColor);
+         actvGpsTime.setTextColor(mAccentColor);
       } else {
          // data is absent - we have nothing to show \
-         actvGpsData.setTextColor(primaryTextColor);
-         actvGpsTime.setTextColor(primaryTextColor);
+         actvGpsData.setTextColor(mPrimaryTextColor);
+         actvGpsTime.setTextColor(mPrimaryTextColor);
 
          if (isMyServiceRunning(MainService.class)) {
             actvGpsData.setText(getString(R.string.gpsDataOn));
@@ -342,8 +354,8 @@ public class MainActivity extends AppCompatActivity {
       SharedPreferences sharedPreferences = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE);
 //      SharedPreferences sharedPreferences = getPreferences(MODE_PRIVATE);
       sharedPreferences.edit().clear().
-            putString(GlobalKeys.S_P_QR_KEY, qrFromActivityResult).apply();
+               putString(GlobalKeys.S_P_QR_KEY, qrFromActivityResult).apply();
       // informing the user about change in qr-code \
-      vibrator.vibrate(100);
+      mVibrator.vibrate(100);
    }
 }

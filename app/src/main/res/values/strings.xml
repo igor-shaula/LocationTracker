@@ -11,9 +11,10 @@
    <string name="inetStatus">Connection status</string>
 
    <string name="gpsDataOff">Launch tracking to get coordinates</string>
-   <string name="gpsTimeOff">and time of taking longitude info</string>
+   <string name="gpsTimeOff">and time of taking location info</string>
    <string name="gpsDataOn">Soon you will get coordinates…</string>
    <string name="gpsTimeOn">and time of metering as well…</string>
+   <string name="passedDistanceInM">Passed distance will be shown here</string>
 
    <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
    <string name="oldQR_CodeIsKept">This QR-code is already in use</string>
@@ -28,6 +29,5 @@
    <string name="textForPresentScan">"QR-code is already present\nTouch here to get a new one"</string>
    <string name="textForTrackingSwitchedOn">"Tracking launched\nTouch again to stop it"</string>
    <string name="textForTrackingSwitchedOff">"Tracking stopped\nTouch again to launch it"</string>
-   <string name="distance">Distance in meters...</string>
 
 </resources>

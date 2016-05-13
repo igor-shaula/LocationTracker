@@ -5,38 +5,33 @@ import com.google.gson.annotations.SerializedName;
 import io.realm.RealmObject;
 
 /**
- * Created by igor shaula - to work with Realm \
+ * Created by igor shaula - to hold data for GSON and work with Realm \
  */
 public class LocationPoint extends RealmObject {
 
-//   private int id;
-
    @SerializedName("lat")
    private double latitude;
-   @SerializedName("long")
+   @SerializedName("lng")
    private double longitude;
-   @SerializedName("time")
-   private long time;
+   @SerializedName("date")
+   private long timeInMs;
+   @SerializedName("distance")
+   private int distanceInM;
+   // just for refinement of distance calculations \
+   private float speed;
 
-   public LocationPoint(double latitude, double longitude, long milliseconds) {
+   public LocationPoint(double latitude, double longitude,
+                        long timeInMs, int distanceInM, float speed) {
       this.latitude = latitude;
       this.longitude = longitude;
-      this.time = milliseconds;
+      this.timeInMs = timeInMs;
+      this.distanceInM = distanceInM;
+      this.speed = speed;
    }
 
    public LocationPoint() {
       // just to preserve it for realm \
    }
-
-/*
-   public int getId() {
-      return id;
-   }
-
-   public void setId(int id) {
-      this.id = id;
-   }
-*/
 
    public double getLatitude() {
       return latitude;
@@ -54,11 +49,27 @@ public class LocationPoint extends RealmObject {
       this.longitude = longitude;
    }
 
-   public long getTime() {
-      return time;
+   public long getTimeInMs() {
+      return timeInMs;
    }
 
-   public void setTime(long time) {
-      this.time = time;
+   public void setTimeInMs(long timeInMs) {
+      this.timeInMs = timeInMs;
+   }
+
+   public int getDistanceInM() {
+      return distanceInM;
+   }
+
+   public void setDistanceInM(int distanceInM) {
+      this.distanceInM = distanceInM;
+   }
+
+   public float getSpeed() {
+      return speed;
+   }
+
+   public void setSpeed(float speed) {
+      this.speed = speed;
    }
 }

@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -39,47 +40,24 @@ public class MainService extends Service {
    private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
    private final static float MIN_DISTANCE_IN_METERS = 10;
 
-   private PendingIntent pendingIntent;
-   private String qrFromActivity;
+   private PendingIntent mPendingIntent;
+   private String mQrFromActivity;
 
-   private double latitude, longitude;
-   private long timeTaken;
+   private double mLatitude, mLongitude;
+   private long mTime;
+   private int mDistance;
+   private float mSpeed;
 
-   private LocationManager locationManager;
-   private ConnectivityManager connectivityManager;
-
-   private Realm realm; // instance of the database \
+   private LocationManager mLocationManager;
 
    // definition of special object for listener \
-   private LocationListener locationListener = new LocationListener() {
+//   private LocationListener locationListener;
 
-      @Override
-      public void onProviderDisabled(String provider) {
-         MyLog.v("onProviderDisabled = happened");
-         reactOnLocationListener(provider, null);
-      }
+   private ConnectivityManager mConnectivityManager;
 
-      @Override
-      public void onProviderEnabled(String provider) {
-         MyLog.v("onProviderEnabled = started");
-         reactOnLocationListener(provider, null);
-      }
+   private Realm mRealm; // instance of the database \
 
-      @Override
-      public void onStatusChanged(String provider, int status, Bundle extras) {
-         MyLog.v("onStatusChanged = started");
-         reactOnLocationListener(provider, null);
-      }
-
-      @Override
-      public void onLocationChanged(Location newLocation) {
-         MyLog.v("onLocationChanged = started");
-         reactOnLocationListener(null, newLocation);
-//         showLocation(newLocation); // contains checkInternet() inside \
-      }
-   }; // new LocationListener nameless class description ended \
-
-// service lifecycle started \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// LIFECYCLE =======================================================================================
 
    @Nullable
    @Override
@@ -92,20 +70,20 @@ public class MainService extends Service {
       MyLog.v("onStartCommand = MainService started");
 
       // now starting service as from zero \
-      pendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
+      mPendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
       // when service is restarted after reboot - intent is empty \
-      if (pendingIntent == null)
-         pendingIntent = PendingIntent.getActivity(getApplicationContext(), 1, new Intent(), 0);
+      if (mPendingIntent == null)
+         mPendingIntent = PendingIntent.getActivity(getApplicationContext(), 1, new Intent(), 0);
 
-      qrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
+      mQrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
       // when service is restarted after reboot - intent is empty \
-      if (qrFromActivity == null)
+      if (mQrFromActivity == null)
          // just restoring the data from shared preferances \
-         qrFromActivity = getApplicationContext().
+         mQrFromActivity = getApplicationContext().
                   getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE).
                   getString(GlobalKeys.S_P_QR_KEY, "");
       // we assume that QR-code contains valid web URL inside \
-      MyLog.v("getStringExtra: " + qrFromActivity);
+      MyLog.v("getStringExtra: " + mQrFromActivity);
 
       // Create the Realm configuration
       RealmConfiguration realmConfig = new RealmConfiguration
@@ -113,46 +91,91 @@ public class MainService extends Service {
                .deleteRealmIfMigrationNeeded()
                .build();
       // Open the Realm for the UI thread.
-      realm = Realm.getInstance(realmConfig);
+      mRealm = Realm.getInstance(realmConfig);
 
-      // temporary crutch - clearing the database to get proper distance \
-      realm.beginTransaction();
-      realm.where(LocationPoint.class).findAll().deleteAllFromRealm();
-      realm.commitTransaction();
+      // initially clearing the database to get proper distance \
+      mRealm.beginTransaction();
+      mRealm.delete(LocationPoint.class);
+//      mRealm.where(LocationPoint.class).findAll().deleteAllFromRealm();
+      mRealm.commitTransaction();
 
       // main job for the service \
       gpsTrackingStart();
+
       return Service.START_REDELIVER_INTENT;
-   }
+   } // end of onStartCommand-method \\
 
-// service lifecycle ended \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// PREPARING MECHANISM =============================================================================
 
-   public void gpsTrackingStart() {
+   private void gpsTrackingStart() {
 
-      locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-      connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      // for now all actions are launched from inside this listener \
+      LocationListener locationListener = new LocationListener() {
+
+         @Override
+         public void onProviderDisabled(String provider) {
+            MyLog.v("onProviderDisabled = happened");
+            Toast.makeText(MainService.this, "GPS provider disabled", Toast.LENGTH_SHORT).show();
+            reactOnLocationListener(provider, null);
+         }
+
+         @Override
+         public void onProviderEnabled(String provider) {
+            MyLog.v("onProviderEnabled = started");
+            Toast.makeText(MainService.this, "GPS provider enabled", Toast.LENGTH_SHORT).show();
+            reactOnLocationListener(provider, null);
+         }
+
+         @Override
+         public void onStatusChanged(String provider, int status, Bundle extras) {
+            MyLog.v("onStatusChanged = started");
+//            Toast.makeText(MainService.this, "onStatusChanged", Toast.LENGTH_SHORT).show();
+            // TODO: 13.05.2016 investigate status and extras from here \
+            reactOnLocationListener(provider, null);
+         }
+
+         @Override
+         public void onLocationChanged(Location newLocation) {
+            MyLog.v("onLocationChanged = started");
+//            Toast.makeText(MainService.this, "onLocationChanged", Toast.LENGTH_SHORT).show();
+            // TODO: 13.05.2016 separate data processing from this method \
+            reactOnLocationListener(null, newLocation);
+         }
+      }; // end of LocationListener-description \\
+
+      mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
       // this check is required by IDE \
-      if (ActivityCompat.checkSelfPermission(this,
-               Manifest.permission.ACCESS_COARSE_LOCATION)
+      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION)
+               ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
+
          MyLog.v("permissions are not set well");
+
+         Toast.makeText(MainService.this, "...permissions are not set well", Toast.LENGTH_SHORT).show();
       } else {
-         locationManager.requestLocationUpdates(
+         mLocationManager.requestLocationUpdates(
                   LocationManager.GPS_PROVIDER,
                   MIN_PERIOD_MILLISECONDS,
                   MIN_DISTANCE_IN_METERS,
                   locationListener);
       }
+/*
+      LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
+      int accuracyLevel = locationProvider.getAccuracy();
+      MyLog.i("accuracyLevel = " + accuracyLevel);
+*/
+      mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
       // just for testing purpose and to check the URL at the service start \
-      sendInfoToServer();
-   }
+      if (checkInternet()) sendInfoToServer();
+   } // end of gpsTrackingStart-method \\
 
-   private void reactOnLocationListener(String provider, Location newLocation) {
-      // only one location point - for only one line of network requests \
+// ACTIONS FROM LISTENER ===========================================================================
+
+   // this method is called only from inside location listener
+   private void reactOnLocationListener(String locationProvider, Location newLocation) {
+      // only one (current) location point - for only one line of network requests \
       Location location;
 
       // this check is required by IDE \
@@ -164,45 +187,63 @@ public class MainService extends Service {
                         != PackageManager.PERMISSION_GRANTED) {
          return;
       }
-      if (provider == null) location = newLocation;
-      else location = locationManager.getLastKnownLocation(provider);
+      if (locationProvider == null) location = newLocation;
+      else location = mLocationManager.getLastKnownLocation(locationProvider);
 
       if (location != null) {
-         latitude = location.getLatitude();
-         longitude = location.getLongitude();
-         timeTaken = location.getTime();
+         mLatitude = location.getLatitude();
+         mLongitude = location.getLongitude();
+         mTime = location.getTime();
+         if (location.hasSpeed()) mSpeed = location.getSpeed();
+         else mSpeed = 0; // explicitly clearing value from previous possible point \
       }
-      saveToDB(latitude, longitude, timeTaken);
+      // the only place of saving current point into database \
+      saveToDB(mLatitude, mLongitude, mTime, mSpeed);
+
+      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAll();
+      mDistance = (int) getTotalDistance(locationPointList);
 
       // first we have to check internet availability and inform activity about it \
       if (checkInternet()) sendInfoToServer(); // this is the last action for service job \
       // creation and two puts are made with one line here \
 
-      RealmResults<LocationPoint> locationPointList = realm.where(LocationPoint.class).findAll();
       Intent intentToReturn = new Intent()
-               .putExtra(GlobalKeys.GPS_LATITUDE, latitude)
-               .putExtra(GlobalKeys.GPS_LONGITUDE, longitude)
-               .putExtra(GlobalKeys.GPS_TAKING_TIME, timeTaken)
-               .putExtra(GlobalKeys.DISTANCE, getTotalDistance(locationPointList));
+               .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
+               .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
+               .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
+               .putExtra(GlobalKeys.DISTANCE, mDistance);
       sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
+   } // end of reactOnLocationListener-method \\
+
+// UTILS ===========================================================================================
+
+   // universal point to send info to MainActivity \
+   private void sendIntentToActivity(Intent intent, int code) {
+      try {
+         mPendingIntent.send(this, code, intent);
+      } catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
    }
 
    // saving to database - realized with RealM \
-   private void saveToDB(double latitude, double longitude, long timeTaken) {
+   private void saveToDB(double latitude, double longitude, long currentTime, float speed) {
 
       // All writes must be wrapped in a transaction to facilitate safe multi threading
-      realm.beginTransaction();
+      mRealm.beginTransaction();
 
-      LocationPoint locationPoint = realm.createObject(LocationPoint.class);
+      LocationPoint locationPoint = mRealm.createObject(LocationPoint.class);
       locationPoint.setLatitude(latitude);
       locationPoint.setLongitude(longitude);
-      locationPoint.setTime(timeTaken);
+      locationPoint.setTimeInMs(currentTime);
+      locationPoint.setSpeed(speed);
 
       // When the transaction is committed, all changes a synced to disk.
-      realm.commitTransaction();
+      mRealm.commitTransaction();
    }
 
-   private int getTotalDistance(RealmResults<LocationPoint> locationPointList) {
+   // returns believable value of total passed distance \
+   private float getTotalDistance(RealmResults<LocationPoint> locationPointList) {
 
       int capacity = locationPointList.size();
       MyLog.i("capacity = " + capacity);
@@ -228,41 +269,45 @@ public class MainService extends Service {
 
             // we have to measure distance only between real points - not zeroes \
             if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
-               MyLog.i("all four != 0");
 
-               // result of calculations is stored inside the resultArray \
-               Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
-               totalDistanceInMeters += resultArray[0];
-            }
-         }
-      }
+               MyLog.i("startPoint speed = " + startPoint.getSpeed());
 
-      return (int) totalDistanceInMeters;
-   }
+               // before calculating distance checking if it could be real \
+               if (startPoint.getSpeed() > 1) { // meters per second
 
-   // universal point to send info to MainActivity \
-   private void sendIntentToActivity(Intent intent, int code) {
-      try {
-         pendingIntent.send(this, code, intent);
-      } catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
-   }
+                  // result of calculations is stored inside the resultArray \
+                  Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
 
+                  MyLog.i("calculations done: resultArray[0] = " + resultArray[0]);
+
+                  // quick decision to cut off location noise and count only car movement \
+                  if (resultArray[0] > MIN_DISTANCE_IN_METERS)
+                     totalDistanceInMeters += resultArray[0];
+
+               } // end of check-speed-condition \\
+            } // end of check-four-non-zero-condition \\
+         } // end of hasNext-condition \\
+      } // end of for-loop \\
+      MyLog.i("totalDistanceInMeters = " + totalDistanceInMeters);
+
+      return totalDistanceInMeters;
+   } // end of getTotalDistance-method \\
+
+   // it works before every connection attempt \
    private boolean checkInternet() {
 
-      NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+      NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
       try {
          if (networkInfo != null) {
             if (networkInfo.isConnected()) {
-               pendingIntent.send(GlobalKeys.P_I_CONNECTION_ON);
+               mPendingIntent.send(GlobalKeys.P_I_CONNECTION_ON);
                return true;
             } else {
-               pendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
+               mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
                return false;
             }
          } else {
-            pendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
+            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
             return false;
          }
       } catch (PendingIntent.CanceledException e) {
@@ -271,16 +316,17 @@ public class MainService extends Service {
       }
    }
 
-   // my Retrofit usage to send tracking data to the server \
-   public void sendInfoToServer() {
+   // my OkHTTP usage to send tracking data to the server - Retrofit didn't work \
+   private void sendInfoToServer() {
       MyLog.v("sendInfoToServer = started");
 
       // at first creating object to send to the server \
-      LocationPoint driverData = new LocationPoint(latitude, longitude, timeTaken);
+      LocationPoint locationPoint = new LocationPoint(mLatitude, mLongitude, mTime, mDistance, mSpeed);
+      // currently speed will not be transmitted to the server \
 
       Gson gson = new GsonBuilder().create();
 
-      String jsonToSend = gson.toJson(driverData, LocationPoint.class);
+      String jsonToSend = gson.toJson(locationPoint, LocationPoint.class);
       MyLog.v("jsonToSend: " + jsonToSend);
 
       MediaType JSON = MediaType.parse("application/json; charset=utf-8");
@@ -289,7 +335,7 @@ public class MainService extends Service {
 
       try {
          Request request = new Request.Builder()
-                  .url(qrFromActivity)
+                  .url(mQrFromActivity)
 //               .cacheControl(new CacheControl.Builder().noCache().build()) // no effect \
                   .post(body)
                   .build();
@@ -300,7 +346,6 @@ public class MainService extends Service {
             @Override
             public void onFailure(Call call, IOException e) {
                MyLog.d("onFailure: " + call.request().method());
-//            MyLog.d("onFailure: " + call.request().toString());
                MyLog.d("onFailure: " + call.request().body().contentType().toString());
             }
 
@@ -309,8 +354,8 @@ public class MainService extends Service {
                MyLog.d("onResponse: " + response.message());
                if (response.isSuccessful()) {
                   MyLog.d("onResponse: successfull - OkHTTP");
+//                  MyLog.d("onResponse: " + response.body().contentType().toString());
                   MyLog.d("onResponse: " + response.body().string());
-                  MyLog.d("onResponse: " + response.body().contentType().toString());
                } else {
                   MyLog.d("onResponse: " + call.request().body().contentType().toString());
                   MyLog.d("sFromResponse: " + response.message());
@@ -319,8 +364,8 @@ public class MainService extends Service {
          });
       } catch (IllegalArgumentException iae) {
          iae.printStackTrace();
-         // we must inform activity about wrong
-         Intent intent = new Intent().putExtra(GlobalKeys.QR_KEY_INVALID, qrFromActivity);
+         // we must inform activity about wrong qr-code \
+         Intent intent = new Intent().putExtra(GlobalKeys.QR_KEY_INVALID, mQrFromActivity);
          sendIntentToActivity(intent, GlobalKeys.P_I_CODE_QR_KEY_INVALID);
       }
    } // end of sendInfoToServer-method \\
