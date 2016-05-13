@@ -1,6 +1,6 @@
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light.Dialog.MinWidth">
+    <style name="AppTheme" parent="Theme.AppCompat.Light">
         <!-- nothing here - this style serves only to get dialog theme involved -->
     </style>
 
@@ -21,6 +21,10 @@
     <style name="MatchMatch">
         <item name="android:layout_width">match_parent</item>
         <item name="android:layout_height">match_parent</item>
+    </style>
+
+    <style name="MatchMatch.Center">
+        <item name="android:gravity">center</item>
     </style>
 
     <!-- match / wrap -->
@@ -74,7 +78,7 @@
         <item name="android:textSize">@dimen/bigTextSize</item>
     </style>
 
-    <style name="MyLayout" parent="Widget.Design.CoordinatorLayout">
+    <style name="MyLayout">
         <item name="android:padding">@dimen/size_8</item>
         <item name="android:background">@drawable/my_layout_shape_light</item>
         <item name="android:gravity">center</item>

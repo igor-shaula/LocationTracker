@@ -21,16 +21,28 @@ import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.solveast.gps_tracker.GlobalKeys;
 import com.solveast.gps_tracker.MyLog;
 import com.solveast.gps_tracker.R;
+import com.solveast.gps_tracker.entity.ContinuousMode;
 import com.solveast.gps_tracker.service.MainService;
 
+import java.io.IOException;
 import java.util.Calendar;
+
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-   private AppCompatButton acbScanQR;
+   private AppCompatButton acbScanQR, acbSetContinuous;
    private SwitchCompat scTrackingStatus;
    private AppCompatTextView actvGpsStatus;
    private AppCompatTextView actvInetStatus;
@@ -49,7 +61,7 @@ public class MainActivity extends AppCompatActivity {
    private LocationManager mLocationManager;
    private ConnectivityManager mConnectivityManager;
 
-// LIFECYCLE \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// LIFECYCLE =======================================================================================
 
    @Override
    protected void onCreate(Bundle savedInstanceState) {
@@ -95,6 +107,32 @@ public class MainActivity extends AppCompatActivity {
                   }
                }
       );
+
+      acbSetContinuous = (AppCompatButton) findViewById(R.id.acb_SetContinuous);
+      acbSetContinuous.setOnLongClickListener(new View.OnLongClickListener() {
+         @Override
+         public boolean onLongClick(View v) {
+            // here we just updating visual state of the button \
+            if (!v.isActivated()) {
+               MyLog.i("onLongClick \\ state = activated");
+               acbSetContinuous.setText(getString(R.string.textForContinuousOn));
+               acbSetContinuous.setTextColor(mPrimaryDarkColor);
+               acbSetContinuous.setBackgroundResource(R.drawable.my_rounded_button_shape);
+               // making next switching state available \
+               acbSetContinuous.setActivated(true);
+            } else {
+               MyLog.i("onLongClick \\ state = not activated");
+               acbSetContinuous.setText(getString(R.string.textForContinuousOff));
+               acbSetContinuous.setTextColor(mWhiteColor);
+               acbSetContinuous.setBackgroundResource(R.drawable.my_rounded_button_shape_dark);
+               // making next switching state available \
+               acbSetContinuous.setActivated(false);
+            }
+            // here network job is done along with data preparations \
+            switchContinuousMode();
+            return false;
+         }
+      });
 /*
        setting the initial state of the buttons depending on QR availlability
        and whether service running state in background at the start of activity \
@@ -128,7 +166,7 @@ public class MainActivity extends AppCompatActivity {
 
    } // end of onCreate-method \
 
-// METHODS TO SWITCH STATES OF ALL VIEW ELEMENTS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// CHECKERS & VIEW STATE SWITCHERS =================================================================
 
    // crazy simple magic method - it finds my service among others \
    private boolean isMyServiceRunning(Class<?> serviceClass) {
@@ -215,7 +253,7 @@ public class MainActivity extends AppCompatActivity {
       }
    }
 
-// MAIN SET OF METHODS \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+// MAIN SET OF METHODS =============================================================================
 
    private void showSystemScreenForGps() {
       Toast.makeText(MainActivity.this, "Please switch the GPS on", Toast.LENGTH_SHORT).show();
@@ -235,6 +273,7 @@ public class MainActivity extends AppCompatActivity {
    }
 
    public void stopTracking() {
+      // here we have to switch service off completely \
       stopService(new Intent(this, MainService.class));
       setTrackingSwitchStatus(false);
    }
@@ -358,4 +397,75 @@ public class MainActivity extends AppCompatActivity {
       // informing the user about change in qr-code \
       mVibrator.vibrate(100);
    }
+
+   // my OkHTTP usage to send tracking data to the server - Retrofit didn't work \
+   private void switchContinuousMode() {
+      MyLog.v("sendInfoToServer = started for continuous mode");
+
+      // 1 - determining id from QR-code \
+      int id;
+      int counter = mQrFromSP.length();
+      for (int i = counter - 1; i > 0; i--)
+         if (mQrFromSP.charAt(i) == '-') {
+            counter = i + 1;
+            break;
+         }
+      id = Integer.decode(mQrFromSP.substring(counter, mQrFromSP.length()));
+      MyLog.i("id from QR = " + id);
+
+      // 2 - retreiving time of switching state \
+      long switchingTime = System.currentTimeMillis();
+      MyLog.i("switchingTime = " + switchingTime);
+
+      // 3 - setting the state of switcher \
+      String state = acbSetContinuous.isActivated() ? "ON" : "Off";
+
+      // 4 - now creating object to send to the server \
+      ContinuousMode continuousMode = new ContinuousMode(id, switchingTime, state);
+      // currently speed will not be transmitted to the server \
+
+      Gson gson = new GsonBuilder().create();
+
+      String jsonToSend = gson.toJson(continuousMode, ContinuousMode.class);
+      MyLog.v("jsonToSend: " + jsonToSend);
+
+      MediaType JSON = MediaType.parse("application/json; charset=utf-8");
+
+      RequestBody body = RequestBody.create(JSON, jsonToSend);
+
+      try {
+         Request request = new Request.Builder()
+                  .url("http://muleteer.herokuapp.com/admin/period/mule-" + id)
+//               .cacheControl(new CacheControl.Builder().noCache().build()) // no effect \
+                  .post(body)
+                  .build();
+
+         OkHttpClient okHttpClient = new OkHttpClient();
+
+         okHttpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+               MyLog.d("onFailure: " + call.request().method());
+               MyLog.d("onFailure: " + call.request().body().contentType().toString());
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+               MyLog.d("onResponse: " + response.message());
+               if (response.isSuccessful()) {
+                  MyLog.d("onResponse: successfull - OkHTTP");
+//                  MyLog.d("onResponse: " + response.body().contentType().toString());
+                  MyLog.d("onResponse: " + response.body().string());
+               } else {
+                  MyLog.d("onResponse: " + call.request().body().contentType().toString());
+                  MyLog.d("sFromResponse: " + response.message());
+               }
+            }
+         });
+      } catch (IllegalArgumentException iae) {
+         iae.printStackTrace();
+         // we must inform activity about wrong qr-code \
+         Toast.makeText(MainActivity.this, "IllegalArgumentException", Toast.LENGTH_SHORT).show();
+      }
+   } // end of sendInfoToServer-method \\
 }

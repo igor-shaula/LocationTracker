@@ -1,6 +1,6 @@
 <resources>
 
-   <string name="app_name">GPS-tracker</string>
+   <string name="app_name">Geo-tracker</string>
    <string name="title_activity_qr">QrActivity</string>
    <string name="sampleText">text for switch</string>
 
@@ -29,5 +29,8 @@
    <string name="textForPresentScan">"QR-code is already present\nTouch here to get a new one"</string>
    <string name="textForTrackingSwitchedOn">"Tracking launched\nTouch again to stop it"</string>
    <string name="textForTrackingSwitchedOff">"Tracking stopped\nTouch again to launch it"</string>
+
+   <string name="textForContinuousOn">Continuous mode set ON\nLong click to switch it off</string>
+   <string name="textForContinuousOff">Long click on this button\nto enter continuous mode</string>
 
 </resources>

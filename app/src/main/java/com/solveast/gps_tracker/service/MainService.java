@@ -42,20 +42,16 @@ public class MainService extends Service {
 
    private PendingIntent mPendingIntent;
    private String mQrFromActivity;
+   private Realm mRealm; // represents instance of the database \
 
    private double mLatitude, mLongitude;
    private long mTime;
    private int mDistance;
    private float mSpeed;
 
-   private LocationManager mLocationManager;
-
-   // definition of special object for listener \
-//   private LocationListener locationListener;
-
    private ConnectivityManager mConnectivityManager;
-
-   private Realm mRealm; // instance of the database \
+   private LocationManager mLocationManager;
+   private LocationListener mLocationListener;
 
 // LIFECYCLE =======================================================================================
 
@@ -105,25 +101,34 @@ public class MainService extends Service {
       return Service.START_REDELIVER_INTENT;
    } // end of onStartCommand-method \\
 
-// PREPARING MECHANISM =============================================================================
+   @Override
+   public void onDestroy() {
+      super.onDestroy();
+      mLocationManager.removeUpdates(mLocationListener);
+   }
+
+   // PREPARING MECHANISM =============================================================================
 
    private void gpsTrackingStart() {
 
+      // this is the global data source of all location information \
+      mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
       // for now all actions are launched from inside this listener \
-      LocationListener locationListener = new LocationListener() {
+      mLocationListener = new LocationListener() {
 
          @Override
          public void onProviderDisabled(String provider) {
             MyLog.v("onProviderDisabled = happened");
             Toast.makeText(MainService.this, "GPS provider disabled", Toast.LENGTH_SHORT).show();
-            reactOnLocationListener(provider, null);
+            // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onProviderEnabled(String provider) {
             MyLog.v("onProviderEnabled = started");
             Toast.makeText(MainService.this, "GPS provider enabled", Toast.LENGTH_SHORT).show();
-            reactOnLocationListener(provider, null);
+            // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
@@ -131,19 +136,16 @@ public class MainService extends Service {
             MyLog.v("onStatusChanged = started");
 //            Toast.makeText(MainService.this, "onStatusChanged", Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 investigate status and extras from here \
-            reactOnLocationListener(provider, null);
+            // TODO: 13.05.2016 make data processing in special method \
          }
 
          @Override
          public void onLocationChanged(Location newLocation) {
             MyLog.v("onLocationChanged = started");
-//            Toast.makeText(MainService.this, "onLocationChanged", Toast.LENGTH_SHORT).show();
-            // TODO: 13.05.2016 separate data processing from this method \
-            reactOnLocationListener(null, newLocation);
+            // the only place where all interesting operations are done \
+            processLocationUpdate(newLocation);
          }
       }; // end of LocationListener-description \\
-
-      mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -152,14 +154,18 @@ public class MainService extends Service {
                         != PackageManager.PERMISSION_GRANTED) {
 
          MyLog.v("permissions are not set well");
-
          Toast.makeText(MainService.this, "...permissions are not set well", Toast.LENGTH_SHORT).show();
       } else {
-         mLocationManager.requestLocationUpdates(
+         mLocationManager.requestLocationUpdates( // for GPS - fine
                   LocationManager.GPS_PROVIDER,
                   MIN_PERIOD_MILLISECONDS,
                   MIN_DISTANCE_IN_METERS,
-                  locationListener);
+                  mLocationListener);
+         mLocationManager.requestLocationUpdates( // cell and wifi - coarse
+                  LocationManager.NETWORK_PROVIDER,
+                  MIN_PERIOD_MILLISECONDS,
+                  MIN_DISTANCE_IN_METERS,
+                  mLocationListener);
       }
 /*
       LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
@@ -174,9 +180,8 @@ public class MainService extends Service {
 // ACTIONS FROM LISTENER ===========================================================================
 
    // this method is called only from inside location listener
-   private void reactOnLocationListener(String locationProvider, Location newLocation) {
+   private void processLocationUpdate(Location location) {
       // only one (current) location point - for only one line of network requests \
-      Location location;
 
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(getApplicationContext(),
@@ -187,16 +192,17 @@ public class MainService extends Service {
                         != PackageManager.PERMISSION_GRANTED) {
          return;
       }
+/*
       if (locationProvider == null) location = newLocation;
       else location = mLocationManager.getLastKnownLocation(locationProvider);
+*/
+      // extracting needed fields - we cannot take the whole object because of Realm restrictions \
+      mLatitude = location.getLatitude();
+      mLongitude = location.getLongitude();
+      mTime = location.getTime();
+      if (location.hasSpeed()) mSpeed = location.getSpeed();
+      else mSpeed = 0; // explicitly clearing value from previous possible point \
 
-      if (location != null) {
-         mLatitude = location.getLatitude();
-         mLongitude = location.getLongitude();
-         mTime = location.getTime();
-         if (location.hasSpeed()) mSpeed = location.getSpeed();
-         else mSpeed = 0; // explicitly clearing value from previous possible point \
-      }
       // the only place of saving current point into database \
       saveToDB(mLatitude, mLongitude, mTime, mSpeed);
 
@@ -213,7 +219,7 @@ public class MainService extends Service {
                .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
                .putExtra(GlobalKeys.DISTANCE, mDistance);
       sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
-   } // end of reactOnLocationListener-method \\
+   } // end of processLocationUpdate-method \\
 
 // UTILS ===========================================================================================
 
