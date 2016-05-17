@@ -8,7 +8,7 @@ import com.solveast.geo_tracker.MyLog;
 import com.solveast.geo_tracker.service.MainService;
 
 /**
- * Created by igor shaula
+ * Created by igor shaula - to reload the service after system reboot \
  */
 public class BootReceiver extends BroadcastReceiver {
    @Override

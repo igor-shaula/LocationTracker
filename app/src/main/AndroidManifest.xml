@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.solveast.geo_tracker"
-          xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+   package="com.solveast.geo_tracker">
 
-   <uses-permission android:name="android.permission.CAMERA"/>
-   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-   <uses-permission android:name="android.permission.INTERNET"/>
-   <uses-permission android:name="android.permission.VIBRATE"/>
+   <uses-permission android:name="android.permission.CAMERA" />
+   <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+   <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+   <uses-permission android:name="android.permission.INTERNET" />
+   <uses-permission android:name="android.permission.VIBRATE" />
 
    <application
       android:allowBackup="true"
@@ -21,28 +21,41 @@
          android:name="com.solveast.geo_tracker.activities.MainActivity"
          android:screenOrientation="portrait">
          <intent-filter>
-            <action android:name="android.intent.action.MAIN"/>
-
-            <category android:name="android.intent.category.LAUNCHER"/>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
          </intent-filter>
       </activity>
 
       <service
          android:name="com.solveast.geo_tracker.service.MainService"
-         android:enabled="true"/>
+         android:enabled="true" />
 
       <receiver android:name="com.solveast.geo_tracker.receiver.BootReceiver">
          <intent-filter>
-            <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            <action android:name="android.intent.action.BOOT_COMPLETED" />
             <!--<action android:name="android.intent.action.AIRPLANE_MODE"/>-->
          </intent-filter>
+      </receiver>
+
+      <!-- next receivers are registered at the level of application context - no more is needed -->
+
+      <receiver android:name=".receiver.GpsStateReceiver">
+         <!--<intent-filter>-->
+            <!--<action android:name="android.location.PROVIDERS_CHANGED" />-->
+         <!--</intent-filter>-->
+      </receiver>
+
+      <receiver android:name=".receiver.InetStateReceiver">
+         <!--<intent-filter>-->
+            <!--<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />-->
+         <!--</intent-filter>-->
       </receiver>
 
       <activity
          android:name="com.solveast.geo_tracker.activities.QrActivity"
          android:label="@string/title_activity_qr"
          android:screenOrientation="portrait"
-         android:theme="@style/Theme.AppCompat.Light.NoActionBar"/>
+         android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
    </application>
 

@@ -23,6 +23,9 @@ import com.solveast.geo_tracker.GlobalKeys;
 import com.solveast.geo_tracker.MyLog;
 import com.solveast.geo_tracker.R;
 import com.solveast.geo_tracker.entity.LocationPoint;
+import com.solveast.geo_tracker.eventbus.RadioStateChangeEvent;
+
+import org.greenrobot.eventbus.EventBus;
 
 import java.io.IOException;
 
@@ -51,7 +54,6 @@ public class MainService extends Service {
    private int mDistance;
    private float mSpeed;
 
-   private ConnectivityManager mConnectivityManager;
    private LocationManager mLocationManager;
    private LocationListener mLocationListener;
 
@@ -162,6 +164,8 @@ public class MainService extends Service {
 
       } else {
          // if all permissions are given - time to launch listening to location updates \
+/*
+         // the most common way - to listen to every adapter - but this causes triple updates \
          String[] providers = {
                   LocationManager.PASSIVE_PROVIDER, // to save battery - unknown accuracy
                   LocationManager.NETWORK_PROVIDER, // cell and wifi - coarse
@@ -176,11 +180,18 @@ public class MainService extends Service {
             LocationProvider locationProvider = mLocationManager.getProvider(provider);
             MyLog.i("accuracy of " + provider + " = " + locationProvider.getAccuracy());
          }
+*/
+         mLocationManager.requestLocationUpdates(
+                  LocationManager.GPS_PROVIDER, // for GPS - fine precision
+                  MIN_PERIOD_MILLISECONDS,
+                  MIN_DISTANCE_IN_METERS,
+                  mLocationListener);
+         LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
+         MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
       }
 
-      mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
       // just for testing purpose and to check the URL at the service start \
-      if (checkInternet()) sendInfoToServer();
+      if (inetIsConnected()) sendInfoToServer();
    } // end of gpsTrackingStart-method \\
 
 // ACTIONS FROM LISTENER ===========================================================================
@@ -215,7 +226,7 @@ public class MainService extends Service {
       mDistance = (int) getTotalDistance(locationPointList);
 
       // first we have to check internet availability and inform activity about it \
-      if (checkInternet()) sendInfoToServer(); // this is the last action for service job \
+      if (inetIsConnected()) sendInfoToServer(); // this is the last action for service job \
       // creation and two puts are made with one line here \
 
       Intent intentToReturn = new Intent()
@@ -305,26 +316,24 @@ public class MainService extends Service {
    } // end of getTotalDistance-method \\
 
    // it works before every connection attempt \
-   private boolean checkInternet() {
+   private boolean inetIsConnected() {
 
-      NetworkInfo networkInfo = mConnectivityManager.getActiveNetworkInfo();
-      try {
-         if (networkInfo != null) {
-            if (networkInfo.isConnected()) {
-               mPendingIntent.send(GlobalKeys.P_I_CONNECTION_ON);
-               return true;
-            } else {
-               mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
-               return false;
-            }
-         } else {
-            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
-            return false;
-         }
-      } catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
+      ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+      NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+//      try {
+      if (networkInfo != null && networkInfo.isConnected()) {
+         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_INET_ON));
+//            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_ON);
+         return true;
+      } else {
+         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_INET_OFF));
+//            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
          return false;
       }
+//      } catch (PendingIntent.CanceledException ce) {
+//         ce.printStackTrace();
+//         return false;
+//      }
    }
 
    // my OkHTTP usage to send tracking data to the server - Retrofit didn't work \

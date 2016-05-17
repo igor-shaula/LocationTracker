@@ -1,91 +1,92 @@
 <resources>
 
-    <style name="AppTheme" parent="Theme.AppCompat.Light">
-        <!-- nothing here - this style serves only to get dialog theme involved -->
-    </style>
+   <style name="AppTheme" parent="Theme.AppCompat.Light">
+      <!-- nothing here - this style serves only to get dialog theme involved -->
+   </style>
 
-    <style name="AppTheme.NoActionBar">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowBackground">@android:color/transparent</item>
-    </style>
+   <style name="AppTheme.NoActionBar">
+      <item name="windowActionBar">false</item>
+      <item name="windowNoTitle">true</item>
+      <item name="android:windowBackground">@android:color/transparent</item>
+   </style>
 
-    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+   <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
-    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+   <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-    <!--=========================================================================================-->
+   <!--=========================================================================================-->
 
-    <!-- match / match -->
+   <!-- match / match -->
 
-    <style name="MatchMatch">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">match_parent</item>
-    </style>
+   <style name="MatchMatch">
+      <item name="android:layout_width">match_parent</item>
+      <item name="android:layout_height">match_parent</item>
+   </style>
 
-    <style name="MatchMatch.Center">
-        <item name="android:gravity">center</item>
-    </style>
+   <style name="MatchMatch.Center">
+      <item name="android:gravity">center</item>
+   </style>
 
-    <!-- match / wrap -->
+   <!-- match / wrap -->
 
-    <style name="MatchWrap">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-    </style>
+   <style name="MatchWrap">
+      <item name="android:layout_width">match_parent</item>
+      <item name="android:layout_height">wrap_content</item>
+   </style>
 
-    <!-- wrap / wrap -->
+   <style name="MatchWrap.MyLayout">
+      <item name="android:gravity">center</item>
+      <item name="android:padding">@dimen/size_8</item>
+      <item name="android:background">@drawable/my_layout_shape_light</item>
+   </style>
 
-    <style name="WrapWrap">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-    </style>
+   <style name="MatchWrap.MyLayout.Bottom">
+      <item name="android:background">@drawable/my_layout_shape</item>
+   </style>
 
-    <!-- weight -->
+   <!-- wrap / wrap -->
 
-    <style name="WeightHeight">
-        <item name="android:layout_weight">1</item>
-        <item name="android:layout_height">0dp</item>
-        <item name="android:layout_width">match_parent</item>
-    </style>
+   <style name="WrapWrap">
+      <item name="android:layout_width">wrap_content</item>
+      <item name="android:layout_height">wrap_content</item>
+   </style>
 
-    <style name="WeightWidth">
-        <item name="android:layout_weight">1</item>
-        <item name="android:layout_height">match_parent</item>
-        <item name="android:layout_width">0dp</item>
-    </style>
+   <!-- weight -->
 
-    <!-- others -->
+   <style name="WeightHeight">
+      <item name="android:layout_weight">1</item>
+      <item name="android:layout_height">0dp</item>
+      <item name="android:layout_width">match_parent</item>
+   </style>
 
-    <style name="MyButton" parent="Widget.AppCompat.Button">
-        <item name="android:capitalize">none</item>
-        <item name="android:layout_margin">@dimen/size_4</item>
-        <item name="android:paddingLeft">@dimen/size_16</item>
-        <item name="android:paddingRight">@dimen/size_16</item>
-        <item name="android:textSize">@dimen/textSize</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:background">@drawable/my_rounded_button_shape_dark</item>
-    </style>
+   <style name="WeightWidth">
+      <item name="android:layout_weight">1</item>
+      <item name="android:layout_height">match_parent</item>
+      <item name="android:layout_width">0dp</item>
+   </style>
 
-    <style name="MyText" parent="TextAppearance.AppCompat">
-        <item name="android:gravity">center</item>
-        <item name="android:singleLine">true</item>
-        <item name="android:textSize">@dimen/textSize</item>
-    </style>
+   <!-- others -->
 
-    <style name="MyText.Big">
-        <item name="android:textColor">@color/secondary_text</item>
-        <item name="android:textSize">@dimen/bigTextSize</item>
-    </style>
+   <style name="MyButton" parent="Widget.AppCompat.Button">
+      <item name="android:capitalize">none</item>
+      <!--<item name="android:layout_margin">@dimen/size_4</item>-->
+      <item name="android:paddingLeft">@dimen/size_16</item>
+      <item name="android:paddingRight">@dimen/size_16</item>
+      <item name="android:textSize">@dimen/textSize</item>
+      <item name="android:textColor">@android:color/white</item>
+      <item name="android:background">@drawable/my_rounded_button_shape_dark</item>
+      <item name="android:layout_gravity">center</item>
+   </style>
 
-    <style name="MyLayout">
-        <item name="android:padding">@dimen/size_8</item>
-        <item name="android:background">@drawable/my_layout_shape_light</item>
-        <item name="android:gravity">center</item>
-    </style>
+   <style name="MyText" parent="TextAppearance.AppCompat">
+      <item name="android:gravity">center</item>
+      <item name="android:singleLine">true</item>
+      <item name="android:textSize">@dimen/textSize</item>
+   </style>
 
-    <style name="MyLayout.Bottom">
-        <item name="android:background">@drawable/my_layout_shape</item>
-    </style>
+   <style name="MyText.Big">
+      <item name="android:textColor">@color/secondary_text</item>
+      <item name="android:textSize">@dimen/bigTextSize</item>
+   </style>
 
 </resources>

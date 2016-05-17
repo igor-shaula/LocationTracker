@@ -85,7 +85,7 @@
 
          @Override
          public void onResponse(okhttp3.Response response) throws IOException {
-            Log.d("onResponse", response.message());
+            Log.d("onResponse", response.whatIsChanged());
             if (response.isSuccessful()) Log.d("onResponse", "successfull - OkHTTP");
             else Log.d("onResponse", "is not successfull - OkHTTP");
          }
@@ -114,13 +114,13 @@
 
          @Override
          public void onResponse(Response<DriverData> response) {
-            Log.d("onResponse", response.message());
+            Log.d("onResponse", response.whatIsChanged());
             if (response.isSuccess()) {
                Log.d("onResponse", "is successfull - Retrofit");
             } else {
                Log.d("onResponse", "is not successfull - Retrofit");
                Log.d("onResponse", "" + response.code());
-               Log.d("onResponse", response.message());
+               Log.d("onResponse", response.whatIsChanged());
             }
          }
 
