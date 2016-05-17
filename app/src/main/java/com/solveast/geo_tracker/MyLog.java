@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker;
+package com.solveast.geo_tracker;
 
 import android.util.Log;
 

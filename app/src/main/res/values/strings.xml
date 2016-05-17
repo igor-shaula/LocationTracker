@@ -16,9 +16,14 @@
    <string name="gpsTimeOn">and time of metering as well…</string>
    <string name="passedDistanceInM">Passed distance will be shown here</string>
 
-   <string name="newQR_CodeIsSet">New QR-code is taken and saved</string>
-   <string name="oldQR_CodeIsKept">This QR-code is already in use</string>
-   <string name="invalidQR_Code">This QR-code cannot be used!</string>
+   <string name="toastNewQR_CodeIsSet">New QR-code is taken and saved</string>
+   <string name="toastOldQR_CodeIsKept">This QR-code is already in use</string>
+   <string name="toastInvalidQR_Code">This QR-code cannot be used!</string>
+   <string name="toastQrCodeIsAbsent">QR-code is absent!</string>
+   <string name="toastSwitchGpsOn">Please switch the GPS on</string>
+   <string name="toastGpsProviderDisabled">GPS provider disabled</string>
+   <string name="toastGpsProviderEnabled">GPS provider enabled</string>
+   <string name="toastPermissionsAreNotGiven">Permissions are not given</string>
 
    <string name="gpsEnabled">GPS enabled</string>
    <string name="gpsDisabled">GPS disabled</string>

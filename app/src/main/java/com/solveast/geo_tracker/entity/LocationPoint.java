@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker.entity;
+package com.solveast.geo_tracker.entity;
 
 import com.google.gson.annotations.SerializedName;
 

@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker.service;
+package com.solveast.geo_tracker.service;
 
 import android.Manifest;
 import android.app.PendingIntent;
@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.location.LocationProvider;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -18,9 +19,10 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.solveast.gps_tracker.GlobalKeys;
-import com.solveast.gps_tracker.MyLog;
-import com.solveast.gps_tracker.entity.LocationPoint;
+import com.solveast.geo_tracker.GlobalKeys;
+import com.solveast.geo_tracker.MyLog;
+import com.solveast.geo_tracker.R;
+import com.solveast.geo_tracker.entity.LocationPoint;
 
 import java.io.IOException;
 
@@ -69,7 +71,8 @@ public class MainService extends Service {
       mPendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
       // when service is restarted after reboot - intent is empty \
       if (mPendingIntent == null)
-         mPendingIntent = PendingIntent.getActivity(getApplicationContext(), 1, new Intent(), 0);
+         mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
+                  GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
 
       mQrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
       // when service is restarted after reboot - intent is empty \
@@ -109,6 +112,7 @@ public class MainService extends Service {
 
    // PREPARING MECHANISM =============================================================================
 
+   // launched from onStartCommand \
    private void gpsTrackingStart() {
 
       // this is the global data source of all location information \
@@ -120,14 +124,14 @@ public class MainService extends Service {
          @Override
          public void onProviderDisabled(String provider) {
             MyLog.v("onProviderDisabled = happened");
-            Toast.makeText(MainService.this, "GPS provider disabled", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onProviderEnabled(String provider) {
             MyLog.v("onProviderEnabled = started");
-            Toast.makeText(MainService.this, "GPS provider enabled", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 make reaction to this event \
          }
 
@@ -147,31 +151,33 @@ public class MainService extends Service {
          }
       }; // end of LocationListener-description \\
 
-      // this check is required by IDE \
+      // this check is required by IDE - i decided to check both permissions at once \
       if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                != PackageManager.PERMISSION_GRANTED &&
                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
-
+         // we can only inform user about absent permissions \
          MyLog.v("permissions are not set well");
-         Toast.makeText(MainService.this, "...permissions are not set well", Toast.LENGTH_SHORT).show();
+         Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
+
       } else {
-         mLocationManager.requestLocationUpdates( // for GPS - fine
-                  LocationManager.GPS_PROVIDER,
-                  MIN_PERIOD_MILLISECONDS,
-                  MIN_DISTANCE_IN_METERS,
-                  mLocationListener);
-         mLocationManager.requestLocationUpdates( // cell and wifi - coarse
-                  LocationManager.NETWORK_PROVIDER,
-                  MIN_PERIOD_MILLISECONDS,
-                  MIN_DISTANCE_IN_METERS,
-                  mLocationListener);
+         // if all permissions are given - time to launch listening to location updates \
+         String[] providers = {
+                  LocationManager.PASSIVE_PROVIDER, // to save battery - unknown accuracy
+                  LocationManager.NETWORK_PROVIDER, // cell and wifi - coarse
+                  LocationManager.GPS_PROVIDER // for GPS - fine
+         };
+         for (String provider : providers) {
+            mLocationManager.requestLocationUpdates(
+                     provider,
+                     MIN_PERIOD_MILLISECONDS,
+                     MIN_DISTANCE_IN_METERS,
+                     mLocationListener);
+            LocationProvider locationProvider = mLocationManager.getProvider(provider);
+            MyLog.i("accuracy of " + provider + " = " + locationProvider.getAccuracy());
+         }
       }
-/*
-      LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
-      int accuracyLevel = locationProvider.getAccuracy();
-      MyLog.i("accuracyLevel = " + accuracyLevel);
-*/
+
       mConnectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
       // just for testing purpose and to check the URL at the service start \
       if (checkInternet()) sendInfoToServer();
@@ -183,6 +189,8 @@ public class MainService extends Service {
    private void processLocationUpdate(Location location) {
       // only one (current) location point - for only one line of network requests \
 
+      MyLog.i(location.getProvider() + " - location accuracy = " + location.getAccuracy());
+
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(getApplicationContext(),
                Manifest.permission.ACCESS_FINE_LOCATION)
@@ -192,10 +200,7 @@ public class MainService extends Service {
                         != PackageManager.PERMISSION_GRANTED) {
          return;
       }
-/*
-      if (locationProvider == null) location = newLocation;
-      else location = mLocationManager.getLastKnownLocation(locationProvider);
-*/
+
       // extracting needed fields - we cannot take the whole object because of Realm restrictions \
       mLatitude = location.getLatitude();
       mLongitude = location.getLongitude();

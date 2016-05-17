@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker;
+package com.solveast.geo_tracker;
 
 /**
  * Created by igor shaula
@@ -12,7 +12,8 @@ public class GlobalKeys {
    public static final String QR_KEY = "QR-code key";
    public static final String QR_KEY_INVALID = "QR-code key is not valid";
 
-   public static final int QR_ACTIVITY_KEY = 10;
+   public static final int REQUEST_CODE_QR_ACTIVITY = 10;
+   public static final int REQUEST_CODE_MAIN_SERVICE = 20;
    public static final int P_I_CODE_DATA_FROM_GPS = 100;
    public static final int P_I_CODE_QR_KEY_INVALID = -100;
    public static final int P_I_CONNECTION_OFF = 201;

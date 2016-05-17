@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker.entity;
+package com.solveast.geo_tracker.entity;
 
 /**
  * Created by igor shaula - to hold data for GSON \

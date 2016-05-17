@@ -1,4 +1,4 @@
-package com.solveast.gps_tracker.activities;
+package com.solveast.geo_tracker.activities;
 
 import android.app.ActivityManager;
 import android.app.PendingIntent;
@@ -23,11 +23,11 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.solveast.gps_tracker.GlobalKeys;
-import com.solveast.gps_tracker.MyLog;
-import com.solveast.gps_tracker.R;
-import com.solveast.gps_tracker.entity.ContinuousMode;
-import com.solveast.gps_tracker.service.MainService;
+import com.solveast.geo_tracker.GlobalKeys;
+import com.solveast.geo_tracker.MyLog;
+import com.solveast.geo_tracker.R;
+import com.solveast.geo_tracker.entity.ContinuousMode;
+import com.solveast.geo_tracker.service.MainService;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -50,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
    private AppCompatTextView actvGpsTime;
    private AppCompatTextView actvDistance;
 
-   private String mQrFromSP;
+   private String mQrCode;
    private int mWhiteColor;
    private int mPrimaryDarkColor;
    private int mPrimaryTextColor;
@@ -143,10 +143,10 @@ public class MainActivity extends AppCompatActivity {
       mAccentColor = ContextCompat.getColor(this, R.color.accent);
 
       // 0 = setting QR-code and its view \
-      mQrFromSP = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE)
+      mQrCode = getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE)
                .getString(GlobalKeys.S_P_QR_KEY, "");
-      MyLog.v("getSharedPreferences: " + mQrFromSP);
-//      mQrFromSP = getPreferences(MODE_PRIVATE).getString(GlobalKeys.S_P_QR_KEY, "");
+      MyLog.v("getSharedPreferences: " + mQrCode);
+//      mQrCode = getPreferences(MODE_PRIVATE).getString(GlobalKeys.S_P_QR_KEY, "");
       setScanQrButtonStatus();
 
       // 1 = checking if the service has already being running at the start of this activity \
@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
    private void setScanQrButtonStatus() {
 
       // setting appearance optimal to show user the state of data \
-      if (!mQrFromSP.equals("")) {
+      if (!mQrCode.equals("")) {
          acbScanQR.setText(getString(R.string.textForPresentScan));
          acbScanQR.setTextColor(mPrimaryDarkColor);
          acbScanQR.setBackgroundResource(R.drawable.my_rounded_button_shape);
@@ -256,16 +256,16 @@ public class MainActivity extends AppCompatActivity {
 // MAIN SET OF METHODS =============================================================================
 
    private void showSystemScreenForGps() {
-      Toast.makeText(MainActivity.this, "Please switch the GPS on", Toast.LENGTH_SHORT).show();
+      Toast.makeText(MainActivity.this, getString(R.string.toastSwitchGpsOn), Toast.LENGTH_SHORT).show();
       // opening window with system settings for GPS \
       startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
    }
 
    public void startTracking() {
       // preparing intent for qr-code sending service \
-      PendingIntent pendingIntent = createPendingResult(1, new Intent(), 0);
+      PendingIntent pendingIntent = createPendingResult(GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
       Intent intentServiceGps = new Intent(this, MainService.class);
-      intentServiceGps.putExtra(GlobalKeys.QR_KEY, mQrFromSP);
+      intentServiceGps.putExtra(GlobalKeys.QR_KEY, mQrCode);
       intentServiceGps.putExtra(GlobalKeys.P_I_KEY, pendingIntent);
 
       startService(intentServiceGps);
@@ -281,7 +281,7 @@ public class MainActivity extends AppCompatActivity {
    // button pressed listener = get QR code \
    public void qrCodeReading(View view) {
       Intent intent = new Intent(MainActivity.this, QrActivity.class);
-      startActivityForResult(intent, GlobalKeys.QR_ACTIVITY_KEY);
+      startActivityForResult(intent, GlobalKeys.REQUEST_CODE_QR_ACTIVITY);
    }
 
    // returning point to this activity \
@@ -292,18 +292,42 @@ public class MainActivity extends AppCompatActivity {
       MyLog.v("onActivityResult = requestCode: " + String.valueOf(requestCode));
       MyLog.v("onActivityResult = resultCode: " + String.valueOf(resultCode));
 
-      // recognizing what has come by contents of resultCode \
-      switch (resultCode) {
-         // result from QrActivity \
-         case GlobalKeys.QR_ACTIVITY_KEY: {
-            MyLog.v("resultCode = GlobalKeys.QR_ACTIVITY_KEY");
+      if (requestCode == GlobalKeys.REQUEST_CODE_QR_ACTIVITY) {
+         if (data != null) {
+            MyLog.v("onActivityResult  = data != null");
+            String newQrCode = data.getStringExtra(GlobalKeys.QR_RESULT);
+            // if a new code is acquired \
+            if (!mQrCode.equals(newQrCode)) {
+               // updating our QR-code for the next scan \
+               mQrCode = newQrCode;
+               // fixing the changes \
+               saveQrToSharedPrefs(newQrCode);
+               // changing the view of scanning button \
+               setScanQrButtonStatus();
+               // location service needs to be stopped after new code is taken - to avoid wrong data \
+               stopTracking();
+               // setting my own toast \
+               Toast.makeText(this, getString(R.string.toastNewQR_CodeIsSet), Toast.LENGTH_SHORT).show();
+            } else
+               Toast.makeText(this, getString(R.string.toastOldQR_CodeIsKept), Toast.LENGTH_SHORT).show();
+            // the only point to enable start of the tracking \
+            scTrackingStatus.setVisibility(View.VISIBLE);
+         } else {
+            MyLog.v("onActivityResult = data is null");
+         }
+      } else if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
+         // recognizing what has come from the service by contents of resultCode \
+         switch (resultCode) {
+            // result from QrActivity \
+/*         case GlobalKeys.REQUEST_CODE_QR_ACTIVITY: {
+            MyLog.v("resultCode = GlobalKeys.REQUEST_CODE_QR_ACTIVITY");
             if (data != null) {
                MyLog.v("onActivityResult  = data != null");
                String newQrCode = data.getStringExtra(GlobalKeys.QR_RESULT);
                // if a new code is acquired \
-               if (!mQrFromSP.equals(newQrCode)) {
+               if (!mQrCode.equals(newQrCode)) {
                   // updating our QR-code for the next scan \
-                  mQrFromSP = newQrCode;
+                  mQrCode = newQrCode;
                   // fixing the changes \
                   saveQrToSharedPrefs(newQrCode);
                   // changing the view of scanning button \
@@ -311,9 +335,9 @@ public class MainActivity extends AppCompatActivity {
                   // location service needs to be stopped after new code is taken - to avoid wrong data \
                   stopTracking();
                   // setting my own toast \
-                  Toast.makeText(this, getString(R.string.newQR_CodeIsSet), Toast.LENGTH_SHORT).show();
+                  Toast.makeText(this, getString(R.string.toastNewQR_CodeIsSet), Toast.LENGTH_SHORT).show();
                } else
-                  Toast.makeText(this, getString(R.string.oldQR_CodeIsKept), Toast.LENGTH_SHORT).show();
+                  Toast.makeText(this, getString(R.string.toastOldQR_CodeIsKept), Toast.LENGTH_SHORT).show();
                // the only point to enable start of the tracking \
                scTrackingStatus.setVisibility(View.VISIBLE);
             } else {
@@ -321,34 +345,36 @@ public class MainActivity extends AppCompatActivity {
             }
             break;
          }
-         // result about GPS from service - incoming intent available \
-         case GlobalKeys.P_I_CODE_DATA_FROM_GPS: {
-            MyLog.v("resultCode = GlobalKeys.P_I_CODE_DATA_FROM_GPS");
-            if (mTrackingIsOn)
-               updateGpsData(data); // data from GPS is obtained and the service is running \
-            break;
-         }
-         // in this case QR-code is detected to be unusable - everything has to be stopped \
-         case GlobalKeys.P_I_CODE_QR_KEY_INVALID: {
-            Toast.makeText(this, getString(R.string.invalidQR_Code), Toast.LENGTH_SHORT).show();
-            // immidiately stopping our service - but on Meizu it sent signal even dead :)
-            stopTracking();
-            // checking and deleting invalid code \
-            String invalidQR = data.getStringExtra(GlobalKeys.QR_KEY_INVALID);
-            saveQrToSharedPrefs(null);
-            if (mQrFromSP.equals(invalidQR)) mQrFromSP = "";
-            // updating the state of the QR-code button \
-            setScanQrButtonStatus();
-            break;
-         }
-         // result about the state of connection from service - just to update \
-         case GlobalKeys.P_I_CONNECTION_OFF:
-         case GlobalKeys.P_I_CONNECTION_ON: {
-            MyLog.v("resultCode = GlobalKeys.P_I_CONNECTION_ON/OFF");
-            // fixing the bug when inet status updated but GPS - not \
-            isGpsEnabled();
-            isInetEnabled();
-            break;
+         */
+            // result about GPS from service - incoming intent available \
+            case GlobalKeys.P_I_CODE_DATA_FROM_GPS: {
+               MyLog.v("receiving new location point from the service");
+               if (mTrackingIsOn)
+                  updateGpsData(data); // data from GPS is obtained and the service is running \
+               break;
+            }
+            // in this case QR-code is detected to be unusable - everything has to be stopped \
+            case GlobalKeys.P_I_CODE_QR_KEY_INVALID: {
+               Toast.makeText(this, getString(R.string.toastInvalidQR_Code), Toast.LENGTH_SHORT).show();
+               // immidiately stopping our service - but on Meizu it sent signal even dead :)
+               stopTracking();
+               // checking and deleting invalid code \
+               String invalidQR = data.getStringExtra(GlobalKeys.QR_KEY_INVALID);
+               saveQrToSharedPrefs(null);
+               if (mQrCode.equals(invalidQR)) mQrCode = "";
+               // updating the state of the QR-code button \
+               setScanQrButtonStatus();
+               break;
+            }
+            // result about the state of connection from service - just to update \
+            case GlobalKeys.P_I_CONNECTION_ON:
+            case GlobalKeys.P_I_CONNECTION_OFF: {
+               MyLog.v("checking internet from the service - to renew data on screen for user");
+               // fixing the bug when inet status updated but GPS - not \
+               isGpsEnabled();
+               isInetEnabled();
+               break;
+            }
          }
       } // end of switch-statement \\
    } // end of onActivityResult-method \\
@@ -404,14 +430,21 @@ public class MainActivity extends AppCompatActivity {
 
       // 1 - determining id from QR-code \
       int id;
-      int counter = mQrFromSP.length();
-      for (int i = counter - 1; i > 0; i--)
-         if (mQrFromSP.charAt(i) == '-') {
-            counter = i + 1;
-            break;
-         }
-      id = Integer.decode(mQrFromSP.substring(counter, mQrFromSP.length()));
-      MyLog.i("id from QR = " + id);
+      if (!mQrCode.equals("")) {
+         int counter = mQrCode.length();
+         for (int i = counter - 1; i > 0; i--)
+            if (mQrCode.charAt(i) == '-') {
+               counter = i + 1;
+               break;
+            }
+         id = Integer.decode(mQrCode.substring(counter, mQrCode.length()));
+         MyLog.i("id from QR = " + id);
+      } else {
+         // escaping from this method because there is no need to transfer data with no id \
+         MyLog.i("mQrCode is absent");
+         Toast.makeText(MainActivity.this, getString(R.string.toastQrCodeIsAbsent), Toast.LENGTH_SHORT).show();
+         return;
+      }
 
       // 2 - retreiving time of switching state \
       long switchingTime = System.currentTimeMillis();
@@ -463,9 +496,10 @@ public class MainActivity extends AppCompatActivity {
             }
          });
       } catch (IllegalArgumentException iae) {
-         iae.printStackTrace();
          // we must inform activity about wrong qr-code \
-         Toast.makeText(MainActivity.this, "IllegalArgumentException", Toast.LENGTH_SHORT).show();
+         iae.printStackTrace();
+         MyLog.i("IllegalArgumentException: " + iae.getLocalizedMessage());
+//         Toast.makeText(MainActivity.this, "IllegalArgumentException", Toast.LENGTH_SHORT).show();
       }
    } // end of sendInfoToServer-method \\
 }

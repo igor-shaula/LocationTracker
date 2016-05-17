@@ -1,12 +1,12 @@
-package com.solveast.gps_tracker.activities;
+package com.solveast.geo_tracker.activities;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
 import com.google.zxing.Result;
-import com.solveast.gps_tracker.GlobalKeys;
-import com.solveast.gps_tracker.MyLog;
+import com.solveast.geo_tracker.GlobalKeys;
+import com.solveast.geo_tracker.MyLog;
 
 import me.dm7.barcodescanner.zxing.ZXingScannerView;
 
@@ -43,7 +43,7 @@ public class QrActivity extends Activity implements ZXingScannerView.ResultHandl
 
       Intent resultIntent = new Intent();
       resultIntent.putExtra(GlobalKeys.QR_RESULT, resultString);
-      setResult(GlobalKeys.QR_ACTIVITY_KEY, resultIntent);
+      setResult(GlobalKeys.REQUEST_CODE_QR_ACTIVITY, resultIntent);
       finish();
    }
 }
