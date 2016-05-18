@@ -125,21 +125,21 @@ public class MainService extends Service {
 
          @Override
          public void onProviderDisabled(String provider) {
-            MyLog.v("onProviderDisabled = happened");
+            MyLog.i("onProviderDisabled = happened");
             Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onProviderEnabled(String provider) {
-            MyLog.v("onProviderEnabled = started");
+            MyLog.i("onProviderEnabled = started");
             Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onStatusChanged(String provider, int status, Bundle extras) {
-            MyLog.v("onStatusChanged = started");
+            MyLog.i("onStatusChanged = started");
 //            Toast.makeText(MainService.this, "onStatusChanged", Toast.LENGTH_SHORT).show();
             // TODO: 13.05.2016 investigate status and extras from here \
             // TODO: 13.05.2016 make data processing in special method \
@@ -147,7 +147,7 @@ public class MainService extends Service {
 
          @Override
          public void onLocationChanged(Location newLocation) {
-            MyLog.v("onLocationChanged = started");
+            MyLog.i("onLocationChanged = started");
             // the only place where all interesting operations are done \
             processLocationUpdate(newLocation);
          }
@@ -159,7 +159,7 @@ public class MainService extends Service {
                ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                         != PackageManager.PERMISSION_GRANTED) {
          // we can only inform user about absent permissions \
-         MyLog.v("permissions are not set well");
+         MyLog.e("permissions are not set well");
          Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
 
       } else {
@@ -218,6 +218,7 @@ public class MainService extends Service {
       mTime = location.getTime();
       if (location.hasSpeed()) mSpeed = location.getSpeed();
       else mSpeed = 0; // explicitly clearing value from previous possible point \
+//      if(location.hasAccuracy()) ...
 
       // the only place of saving current point into database \
       saveToDB(mLatitude, mLongitude, mTime, mSpeed);
@@ -299,13 +300,25 @@ public class MainService extends Service {
 
                   // result of calculations is stored inside the resultArray \
                   Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
-
                   MyLog.i("calculations done: resultArray[0] = " + resultArray[0]);
 
                   // quick decision to cut off location noise and count only car movement \
-                  if (resultArray[0] > MIN_DISTANCE_IN_METERS)
-                     totalDistanceInMeters += resultArray[0];
+                  if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
+                     /*
+                     * i usually receive data with much higher values than it should be \
+                     * so it's obvious that i have to make those strange values some lower \
+                     * first simple attempt - to use measurement of speed to correct the result \
+                     */
+                     long deltaTimeInMs = endPoint.getTimeInMs() - startPoint.getTimeInMs();
+                     float predictedDistance = startPoint.getSpeed() * deltaTimeInMs / 1000;
+                     MyLog.i("calculations: predictedDistance = " + predictedDistance);
 
+                     float minimumOfTwo = resultArray[0];
+                     if (predictedDistance < resultArray[0])
+                        minimumOfTwo = predictedDistance;
+
+                     totalDistanceInMeters += minimumOfTwo;
+                  }
                } // end of check-speed-condition \\
             } // end of check-four-non-zero-condition \\
          } // end of hasNext-condition \\

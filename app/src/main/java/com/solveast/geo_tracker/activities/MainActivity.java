@@ -319,10 +319,10 @@ public class MainActivity extends AppCompatActivity {
    @Override
    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
       super.onActivityResult(requestCode, resultCode, data);
-
+/*
       MyLog.v("onActivityResult = requestCode: " + String.valueOf(requestCode));
       MyLog.v("onActivityResult = resultCode: " + String.valueOf(resultCode));
-
+*/
       if (requestCode == GlobalKeys.REQUEST_CODE_QR_ACTIVITY) {
          // result from QrActivity \
          if (data != null) {
