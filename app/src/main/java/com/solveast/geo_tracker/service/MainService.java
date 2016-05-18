@@ -267,7 +267,6 @@ public class MainService extends Service {
 
    // returns believable value of total passed distance \
    private float getTotalDistance(RealmResults<LocationPoint> locationPointList) {
-
       int capacity = locationPointList.size();
       MyLog.i("capacity = " + capacity);
 
@@ -281,6 +280,7 @@ public class MainService extends Service {
       for (int i = 0; i < capacity; i++) {
          // all works only if there are more than one point at all \
          if (locationPointList.iterator().hasNext()) {
+            // this iterator is not from Collcetions framework - it's from Realm \
             MyLog.i("hasNext & i = " + i);
 
             startPoint = locationPointList.get(i);
@@ -289,6 +289,13 @@ public class MainService extends Service {
             endPoint = locationPointList.iterator().next();
             endLat = endPoint.getLatitude();
             endLong = endPoint.getLongitude();
+
+            MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMs());
+            MyLog.i(i + " calculations: endPoint.millis = " + endPoint.getTimeInMs());
+            // somehow result was <0 otherwise - if end minus start \
+            long deltaTime = (startPoint.getTimeInMs() - endPoint.getTimeInMs())/1000;
+//                     long deltaTime = endPoint.getTimeInMs() - startPoint.getTimeInMs();
+            MyLog.i(i + " calculations: seconds(start - end) = " + deltaTime);
 
             // we have to measure distance only between real points - not zeroes \
             if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
@@ -300,7 +307,7 @@ public class MainService extends Service {
 
                   // result of calculations is stored inside the resultArray \
                   Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
-                  MyLog.i("calculations done: resultArray[0] = " + resultArray[0]);
+                  MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
 
                   // quick decision to cut off location noise and count only car movement \
                   if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
@@ -309,12 +316,13 @@ public class MainService extends Service {
                      * so it's obvious that i have to make those strange values some lower \
                      * first simple attempt - to use measurement of speed to correct the result \
                      */
-                     long deltaTimeInMs = endPoint.getTimeInMs() - startPoint.getTimeInMs();
-                     float predictedDistance = startPoint.getSpeed() * deltaTimeInMs / 1000;
-                     MyLog.i("calculations: predictedDistance = " + predictedDistance);
+
+                     // excessive check '>0' because deltaTime was negative when 'end minus start' \
+                     float predictedDistance = deltaTime > 0 ? startPoint.getSpeed() * deltaTime : 0;
+                     MyLog.i(i + " calculations: predictedDistance = " + predictedDistance);
 
                      float minimumOfTwo = resultArray[0];
-                     if (predictedDistance < resultArray[0])
+                     if (predictedDistance != 0 && predictedDistance < minimumOfTwo)
                         minimumOfTwo = predictedDistance;
 
                      totalDistanceInMeters += minimumOfTwo;
