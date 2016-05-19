@@ -109,6 +109,7 @@ public class MainService extends Service {
    @Override
    public void onDestroy() {
       super.onDestroy();
+      mLocationManager.removeUpdates(mPendingIntent);
       mLocationManager.removeUpdates(mLocationListener);
    }
 
@@ -125,24 +126,20 @@ public class MainService extends Service {
 
          @Override
          public void onProviderDisabled(String provider) {
-            MyLog.i("onProviderDisabled = happened");
+            MyLog.i("onProviderDisabled: " + provider);
             Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
-            // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onProviderEnabled(String provider) {
-            MyLog.i("onProviderEnabled = started");
+            MyLog.i("onProviderEnabled: " + provider);
             Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
-            // TODO: 13.05.2016 make reaction to this event \
          }
 
          @Override
          public void onStatusChanged(String provider, int status, Bundle extras) {
-            MyLog.i("onStatusChanged = started");
-//            Toast.makeText(MainService.this, "onStatusChanged", Toast.LENGTH_SHORT).show();
-            // TODO: 13.05.2016 investigate status and extras from here \
-            // TODO: 13.05.2016 make data processing in special method \
+            MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
+
          }
 
          @Override
@@ -200,7 +197,7 @@ public class MainService extends Service {
    private void processLocationUpdate(Location location) {
       // only one (current) location point - for only one line of network requests \
 
-      MyLog.i(location.getProvider() + " - location accuracy = " + location.getAccuracy());
+      MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
 
       // this check is required by IDE \
       if (ActivityCompat.checkSelfPermission(getApplicationContext(),
@@ -223,7 +220,8 @@ public class MainService extends Service {
       // the only place of saving current point into database \
       saveToDB(mLatitude, mLongitude, mTime, mSpeed);
 
-      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAll();
+      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAllSorted("timeInMs");
+//      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAll();
       mDistance = (int) getTotalDistance(locationPointList);
 
       // first we have to check internet availability and inform activity about it \
@@ -293,7 +291,7 @@ public class MainService extends Service {
             MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMs());
             MyLog.i(i + " calculations: endPoint.millis = " + endPoint.getTimeInMs());
             // somehow result was <0 otherwise - if end minus start \
-            long deltaTime = (startPoint.getTimeInMs() - endPoint.getTimeInMs())/1000;
+            long deltaTime = (startPoint.getTimeInMs() - endPoint.getTimeInMs()) / 1000;
 //                     long deltaTime = endPoint.getTimeInMs() - startPoint.getTimeInMs();
             MyLog.i(i + " calculations: seconds(start - end) = " + deltaTime);
 
