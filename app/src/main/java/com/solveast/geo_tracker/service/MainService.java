@@ -139,7 +139,7 @@ public class MainService extends Service {
          @Override
          public void onStatusChanged(String provider, int status, Bundle extras) {
             MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
-
+            MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
          }
 
          @Override
@@ -151,10 +151,11 @@ public class MainService extends Service {
       }; // end of LocationListener-description \\
 
       // this check is required by IDE - i decided to check both permissions at once \
-      if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
-               != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
+      if (ActivityCompat.checkSelfPermission(this,
+               Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+               &&
+               ActivityCompat.checkSelfPermission(this,
+                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
          // we can only inform user about absent permissions \
          MyLog.e("permissions are not set well");
          Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
@@ -199,16 +200,6 @@ public class MainService extends Service {
 
       MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
 
-      // this check is required by IDE \
-      if (ActivityCompat.checkSelfPermission(getApplicationContext(),
-               Manifest.permission.ACCESS_FINE_LOCATION)
-               != PackageManager.PERMISSION_GRANTED &&
-               ActivityCompat.checkSelfPermission(getApplicationContext(),
-                        Manifest.permission.ACCESS_COARSE_LOCATION)
-                        != PackageManager.PERMISSION_GRANTED) {
-         return;
-      }
-
       // extracting needed fields - we cannot take the whole object because of Realm restrictions \
       mLatitude = location.getLatitude();
       mLongitude = location.getLongitude();
@@ -216,6 +207,8 @@ public class MainService extends Service {
       if (location.hasSpeed()) mSpeed = location.getSpeed();
       else mSpeed = 0; // explicitly clearing value from previous possible point \
 //      if(location.hasAccuracy()) ...
+
+      // TODO: 20.05.2016 try to use the app without database for now - to check where's problem \
 
       // the only place of saving current point into database \
       saveToDB(mLatitude, mLongitude, mTime, mSpeed);
@@ -281,19 +274,26 @@ public class MainService extends Service {
             // this iterator is not from Collcetions framework - it's from Realm \
             MyLog.i("hasNext & i = " + i);
 
-            startPoint = locationPointList.get(i);
-            startLat = startPoint.getLatitude();
-            startLong = startPoint.getLongitude();
-            endPoint = locationPointList.iterator().next();
+            // this is the simplest way to react on time negative difference \
+            endPoint = locationPointList.get(i);
+//            startPoint = locationPointList.get(i);
             endLat = endPoint.getLatitude();
+//            startLat = startPoint.getLatitude();
             endLong = endPoint.getLongitude();
+//            startLong = startPoint.getLongitude();
+            startPoint = locationPointList.iterator().next();
+//            endPoint = locationPointList.iterator().next();
+            startLat = startPoint.getLatitude();
+//            endLat = endPoint.getLatitude();
+            startLong = startPoint.getLongitude();
+//            endLong = endPoint.getLongitude();
 
             MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMs());
-            MyLog.i(i + " calculations: endPoint.millis = " + endPoint.getTimeInMs());
+            MyLog.i(i + " calculations: endPoint.millis _ = " + endPoint.getTimeInMs());
             // somehow result was <0 otherwise - if end minus start \
-            long deltaTime = (startPoint.getTimeInMs() - endPoint.getTimeInMs()) / 1000;
+            long deltaTime = (endPoint.getTimeInMs() - startPoint.getTimeInMs()) / 1000;
 //                     long deltaTime = endPoint.getTimeInMs() - startPoint.getTimeInMs();
-            MyLog.i(i + " calculations: seconds(start - end) = " + deltaTime);
+            MyLog.i(i + " calculations: seconds(end - start) = " + deltaTime);
 
             // we have to measure distance only between real points - not zeroes \
             if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
@@ -316,11 +316,13 @@ public class MainService extends Service {
                      */
 
                      // excessive check '>0' because deltaTime was negative when 'end minus start' \
-                     float predictedDistance = deltaTime > 0 ? startPoint.getSpeed() * deltaTime : 0;
+                     float predictedDistance = startPoint.getSpeed() * deltaTime;
+//                     float predictedDistance = deltaTime > 0 ? startPoint.getSpeed() * deltaTime : 0;
                      MyLog.i(i + " calculations: predictedDistance = " + predictedDistance);
 
                      float minimumOfTwo = resultArray[0];
-                     if (predictedDistance != 0 && predictedDistance < minimumOfTwo)
+                     if (predictedDistance < minimumOfTwo)
+//                     if (predictedDistance != 0 && predictedDistance < minimumOfTwo)
                         minimumOfTwo = predictedDistance;
 
                      totalDistanceInMeters += minimumOfTwo;
@@ -333,6 +335,8 @@ public class MainService extends Service {
 
       return totalDistanceInMeters;
    } // end of getTotalDistance-method \\
+
+   // INTERNET_CONNECTION ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
    // it works before every connection attempt \
    private boolean inetIsConnected() {
