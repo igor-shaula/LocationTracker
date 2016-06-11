@@ -14,14 +14,14 @@ import org.greenrobot.eventbus.EventBus;
  * Created by igor shaula - to react on GPS availability \
  */
 public class GpsStateReceiver extends BroadcastReceiver {
-   @Override
-   public void onReceive(Context context, Intent intent) {
+    @Override
+    public void onReceive(Context context, Intent intent) {
 
-      LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
 
-      if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
-         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_GPS_ON));
-      else
-         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_GPS_OFF));
-   }
+        if (locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER))
+            EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_GPS_ON));
+        else
+            EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_GPS_OFF));
+    }
 }

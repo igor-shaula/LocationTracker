@@ -5,13 +5,13 @@ package com.solveast.geo_tracker.eventbus;
  */
 public class RadioStateChangeEvent {
 
-   private final String whatIsChanged; // anyway this filed does not change - it may be final \
+    private final String whatIsChanged; // anyway this filed does not change - it may be final \
 
-   public RadioStateChangeEvent(String whatIsChanged) {
-      this.whatIsChanged = whatIsChanged;
-   }
+    public RadioStateChangeEvent(String whatIsChanged) {
+        this.whatIsChanged = whatIsChanged;
+    }
 
-   public String getWhatIsChanged() {
-      return whatIsChanged;
-   }
+    public String getWhatIsChanged() {
+        return whatIsChanged;
+    }
 }

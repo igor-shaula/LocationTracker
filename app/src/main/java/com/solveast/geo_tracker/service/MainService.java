@@ -9,159 +9,140 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.solveast.geo_tracker.GlobalKeys;
 import com.solveast.geo_tracker.MyLog;
 import com.solveast.geo_tracker.R;
 import com.solveast.geo_tracker.entity.LocationPoint;
-import com.solveast.geo_tracker.eventbus.RadioStateChangeEvent;
-
-import org.greenrobot.eventbus.EventBus;
-
-import java.io.IOException;
 
 import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
-import okhttp3.Call;
-import okhttp3.Callback;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 
 public class MainService extends Service {
 
-   private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
-   private final static float MIN_DISTANCE_IN_METERS = 10;
+    private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
+    private final static float MIN_DISTANCE_IN_METERS = 10;
 
-   private PendingIntent mPendingIntent;
-   private String mQrFromActivity;
-   private Realm mRealm; // represents instance of the database \
+    private PendingIntent mPendingIntent;
+    private Realm mRealm; // represents instance of the database \
 
-   private double mLatitude, mLongitude;
-   private long mTime;
-   private int mDistance;
-   private float mSpeed;
-
-   private LocationManager mLocationManager;
-   private LocationListener mLocationListener;
+    private LocationManager mLocationManager;
+    private LocationListener mLocationListener;
 
 // LIFECYCLE =======================================================================================
 
-   @Nullable
-   @Override
-   public IBinder onBind(Intent intent) {
-      return null;
-   }
+    @Nullable
+    @Override
+    public IBinder onBind(Intent intent) {
+        return null;
+    }
 
-   @Override
-   public int onStartCommand(Intent intent, int flags, int startId) {
-      MyLog.v("onStartCommand = MainService started");
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        MyLog.v("onStartCommand = MainService started");
 
-      // now starting service as from zero \
-      mPendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
-      // when service is restarted after reboot - intent is empty \
-      if (mPendingIntent == null)
-         mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
-                  GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
+        // now starting service as from zero \
+        mPendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
+        // when service is restarted after reboot - intent is empty \
+        if (mPendingIntent == null)
+            mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
+                    GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
 
-      mQrFromActivity = intent.getStringExtra(GlobalKeys.QR_KEY);
-      // when service is restarted after reboot - intent is empty \
-      if (mQrFromActivity == null)
-         // just restoring the data from shared preferances \
-         mQrFromActivity = getApplicationContext().
-                  getSharedPreferences(GlobalKeys.S_P_NAME, MODE_PRIVATE).
-                  getString(GlobalKeys.S_P_QR_KEY, "");
-      // we assume that QR-code contains valid web URL inside \
-      MyLog.v("getStringExtra: " + mQrFromActivity);
+        // Create the Realm configuration
+        RealmConfiguration realmConfig = new RealmConfiguration
+                .Builder(this)
+                .deleteRealmIfMigrationNeeded()
+                .build();
+        // Open the Realm for the UI thread.
+        mRealm = Realm.getInstance(realmConfig);
 
-      // Create the Realm configuration
-      RealmConfiguration realmConfig = new RealmConfiguration
-               .Builder(this)
-               .deleteRealmIfMigrationNeeded()
-               .build();
-      // Open the Realm for the UI thread.
-      mRealm = Realm.getInstance(realmConfig);
-
-      // initially clearing the database to get proper distance \
-      mRealm.beginTransaction();
-      mRealm.delete(LocationPoint.class);
+        // initially clearing the database to get proper distance \
+        mRealm.beginTransaction();
+        mRealm.delete(LocationPoint.class);
 //      mRealm.where(LocationPoint.class).findAll().deleteAllFromRealm();
-      mRealm.commitTransaction();
+        mRealm.commitTransaction();
 
-      // main job for the service \
-      gpsTrackingStart();
+        // main job for the service \
+        gpsTrackingStart();
 
-      return Service.START_REDELIVER_INTENT;
-   } // end of onStartCommand-method \\
+        return Service.START_REDELIVER_INTENT;
+    } // end of onStartCommand-method \\
 
-   @Override
-   public void onDestroy() {
-      super.onDestroy();
-      mLocationManager.removeUpdates(mPendingIntent);
-      mLocationManager.removeUpdates(mLocationListener);
-   }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        mLocationManager.removeUpdates(mPendingIntent);
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // TODO: Consider calling
+            //    ActivityCompat#requestPermissions
+            // here to request the missing permissions, and then overriding
+            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+            //                                          int[] grantResults)
+            // to handle the case where the user grants the permission. See the documentation
+            // for ActivityCompat#requestPermissions for more details.
+            return;
+        }
+        mLocationManager.removeUpdates(mLocationListener);
+    }
 
-   // PREPARING MECHANISM =============================================================================
+    // PREPARING MECHANISM =============================================================================
 
-   // launched from onStartCommand \
-   private void gpsTrackingStart() {
+    // launched from onStartCommand \
+    private void gpsTrackingStart() {
 
-      // this is the global data source of all location information \
-      mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        // this is the global data source of all location information \
+        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-      // for now all actions are launched from inside this listener \
-      mLocationListener = new LocationListener() {
+        // for now all actions are launched from inside this listener \
+        mLocationListener = new LocationListener() {
 
-         @Override
-         public void onProviderDisabled(String provider) {
-            MyLog.i("onProviderDisabled: " + provider);
-            Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
-         }
+            @Override
+            public void onProviderDisabled(String provider) {
+                MyLog.i("onProviderDisabled: " + provider);
+                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
+            }
 
-         @Override
-         public void onProviderEnabled(String provider) {
-            MyLog.i("onProviderEnabled: " + provider);
-            Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
-         }
+            @Override
+            public void onProviderEnabled(String provider) {
+                MyLog.i("onProviderEnabled: " + provider);
+                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
+            }
 
-         @Override
-         public void onStatusChanged(String provider, int status, Bundle extras) {
-            MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
-            MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
-         }
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+                MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
+                MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
+            }
 
-         @Override
-         public void onLocationChanged(Location newLocation) {
-            MyLog.i("onLocationChanged = started");
-            // the only place where all interesting operations are done \
-            processLocationUpdate(newLocation);
-         }
-      }; // end of LocationListener-description \\
+            @Override
+            public void onLocationChanged(Location newLocation) {
+                MyLog.i("onLocationChanged = started");
+                // the only place where all interesting operations are done \
+                processLocationUpdate(newLocation);
+            }
+        }; // end of LocationListener-description \\
 
-      // this check is required by IDE - i decided to check both permissions at once \
-      if (ActivityCompat.checkSelfPermission(this,
-               Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-               &&
-               ActivityCompat.checkSelfPermission(this,
+        // this check is required by IDE - i decided to check both permissions at once \
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+                &&
+                ActivityCompat.checkSelfPermission(this,
                         Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-         // we can only inform user about absent permissions \
-         MyLog.e("permissions are not set well");
-         Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
+            // we can only inform user about absent permissions \
+            MyLog.e("permissions are not set well");
+            Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
 
-      } else {
-         // if all permissions are given - time to launch listening to location updates \
+        } else {
+            // if all permissions are given - time to launch listening to location updates \
 /*
          // the most common way - to listen to every adapter - but this causes triple updates \
          String[] providers = {
@@ -179,237 +160,153 @@ public class MainService extends Service {
             MyLog.i("accuracy of " + provider + " = " + locationProvider.getAccuracy());
          }
 */
-         mLocationManager.requestLocationUpdates(
-                  LocationManager.GPS_PROVIDER, // for GPS - fine precision
-                  MIN_PERIOD_MILLISECONDS,
-                  MIN_DISTANCE_IN_METERS,
-                  mLocationListener);
-         LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
-         MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
-      }
-
-      // just for testing purpose and to check the URL at the service start \
-      if (inetIsConnected()) sendInfoToServer();
-   } // end of gpsTrackingStart-method \\
+            mLocationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER, // for GPS - fine precision
+                    MIN_PERIOD_MILLISECONDS,
+                    MIN_DISTANCE_IN_METERS,
+                    mLocationListener);
+            LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
+            MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+        }
+    } // end of gpsTrackingStart-method \\
 
 // ACTIONS FROM LISTENER ===========================================================================
 
-   // this method is called only from inside location listener
-   private void processLocationUpdate(Location location) {
-      // only one (current) location point - for only one line of network requests \
+    // this method is called only from inside location listener
+    private void processLocationUpdate(Location location) {
+        // only one (current) location point - for only one line of network requests \
 
-      MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
+        MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
 
-      // extracting needed fields - we cannot take the whole object because of Realm restrictions \
-      mLatitude = location.getLatitude();
-      mLongitude = location.getLongitude();
-      mTime = location.getTime();
-      if (location.hasSpeed()) mSpeed = location.getSpeed();
-      else mSpeed = 0; // explicitly clearing value from previous possible point \
+        // extracting needed fields - we cannot take the whole object because of Realm restrictions \
+        double mLatitude = location.getLatitude();
+        double mLongitude = location.getLongitude();
+        long mTime = location.getTime();
+        float mSpeed;
+        if (location.hasSpeed()) mSpeed = location.getSpeed();
+        else mSpeed = 0; // explicitly clearing value from previous possible point \
 //      if(location.hasAccuracy()) ...
 
-      // TODO: 20.05.2016 try to use the app without database for now - to check where's problem \
+        // TODO: 20.05.2016 try to use the app without database for now - to check where's problem \
 
-      // the only place of saving current point into database \
-      saveToDB(mLatitude, mLongitude, mTime, mSpeed);
+        // the only place of saving current point into database \
+        saveToDB(mLatitude, mLongitude, mTime, mSpeed);
 
-      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAllSorted("timeInMs");
+        RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAllSorted("timeInMs");
 //      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAll();
-      mDistance = (int) getTotalDistance(locationPointList);
+        int mDistance = (int) getTotalDistance(locationPointList);
 
-      // first we have to check internet availability and inform activity about it \
-      if (inetIsConnected()) sendInfoToServer(); // this is the last action for service job \
-      // creation and two puts are made with one line here \
-
-      Intent intentToReturn = new Intent()
-               .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
-               .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
-               .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
-               .putExtra(GlobalKeys.DISTANCE, mDistance);
-      sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
-   } // end of processLocationUpdate-method \\
+        Intent intentToReturn = new Intent()
+                .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
+                .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
+                .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
+                .putExtra(GlobalKeys.DISTANCE, mDistance);
+        sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
+    } // end of processLocationUpdate-method \\
 
 // UTILS ===========================================================================================
 
-   // universal point to send info to MainActivity \
-   private void sendIntentToActivity(Intent intent, int code) {
-      try {
-         mPendingIntent.send(this, code, intent);
-      } catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
-   }
+    // universal point to send info to MainActivity \
+    private void sendIntentToActivity(Intent intent, int code) {
+        try {
+            mPendingIntent.send(this, code, intent);
+        } catch (PendingIntent.CanceledException e) {
+            e.printStackTrace();
+        }
+    }
 
-   // saving to database - realized with RealM \
-   private void saveToDB(double latitude, double longitude, long currentTime, float speed) {
+    // saving to database - realized with RealM \
+    private void saveToDB(double latitude, double longitude, long currentTime, float speed) {
 
-      // All writes must be wrapped in a transaction to facilitate safe multi threading
-      mRealm.beginTransaction();
+        // All writes must be wrapped in a transaction to facilitate safe multi threading
+        mRealm.beginTransaction();
 
-      LocationPoint locationPoint = mRealm.createObject(LocationPoint.class);
-      locationPoint.setLatitude(latitude);
-      locationPoint.setLongitude(longitude);
-      locationPoint.setTimeInMs(currentTime);
-      locationPoint.setSpeed(speed);
+        LocationPoint locationPoint = mRealm.createObject(LocationPoint.class);
+        locationPoint.setLatitude(latitude);
+        locationPoint.setLongitude(longitude);
+        locationPoint.setTimeInMilliSeconds(currentTime);
+        locationPoint.setSpeed(speed);
 
-      // When the transaction is committed, all changes a synced to disk.
-      mRealm.commitTransaction();
-   }
+        // When the transaction is committed, all changes a synced to disk.
+        mRealm.commitTransaction();
+    }
 
-   // returns believable value of total passed distance \
-   private float getTotalDistance(RealmResults<LocationPoint> locationPointList) {
-      int capacity = locationPointList.size();
-      MyLog.i("capacity = " + capacity);
+    // returns believable value of total passed distance \
+    private float getTotalDistance(RealmResults<LocationPoint> locationPointList) {
+        int capacity = locationPointList.size();
+        MyLog.i("capacity = " + capacity);
 
-      // preparing rewritable containers for the following loop \
-      LocationPoint startPoint, endPoint;
-      double startLat, startLong, endLat, endLong;
-      float[] resultArray = new float[1];
-      float totalDistanceInMeters = 0;
+        // preparing rewritable containers for the following loop \
+        LocationPoint startPoint, endPoint;
+        double startLat, startLong, endLat, endLong;
+        float[] resultArray = new float[1];
+        float totalDistanceInMeters = 0;
 
-      // getting all data and receiving numbers at every step \
-      for (int i = 0; i < capacity; i++) {
-         // all works only if there are more than one point at all \
-         if (locationPointList.iterator().hasNext()) {
-            // this iterator is not from Collcetions framework - it's from Realm \
-            MyLog.i("hasNext & i = " + i);
+        // getting all data and receiving numbers at every step \
+        for (int i = 0; i < capacity; i++) {
+            // all works only if there are more than one point at all \
+            if (locationPointList.iterator().hasNext()) {
+                // this iterator is not from Collcetions framework - it's from Realm \
+                MyLog.i("hasNext & i = " + i);
 
-            // this is the simplest way to react on time negative difference \
-            endPoint = locationPointList.get(i);
+                // this is the simplest way to react on time negative difference \
+                endPoint = locationPointList.get(i);
 //            startPoint = locationPointList.get(i);
-            endLat = endPoint.getLatitude();
+                endLat = endPoint.getLatitude();
 //            startLat = startPoint.getLatitude();
-            endLong = endPoint.getLongitude();
+                endLong = endPoint.getLongitude();
 //            startLong = startPoint.getLongitude();
-            startPoint = locationPointList.iterator().next();
+                startPoint = locationPointList.iterator().next();
 //            endPoint = locationPointList.iterator().next();
-            startLat = startPoint.getLatitude();
+                startLat = startPoint.getLatitude();
 //            endLat = endPoint.getLatitude();
-            startLong = startPoint.getLongitude();
+                startLong = startPoint.getLongitude();
 //            endLong = endPoint.getLongitude();
 
-            MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMs());
-            MyLog.i(i + " calculations: endPoint.millis _ = " + endPoint.getTimeInMs());
-            // somehow result was <0 otherwise - if end minus start \
-            long deltaTime = (endPoint.getTimeInMs() - startPoint.getTimeInMs()) / 1000;
-//                     long deltaTime = endPoint.getTimeInMs() - startPoint.getTimeInMs();
-            MyLog.i(i + " calculations: seconds(end - start) = " + deltaTime);
+                MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMilliSeconds());
+                MyLog.i(i + " calculations: endPoint.millis _ = " + endPoint.getTimeInMilliSeconds());
+                // somehow result was <0 otherwise - if end minus start \
+                long deltaTime = (endPoint.getTimeInMilliSeconds() - startPoint.getTimeInMilliSeconds()) / 1000;
+//                     long deltaTime = endPoint.getTimeInMilliSeconds() - startPoint.getTimeInMilliSeconds();
+                MyLog.i(i + " calculations: seconds(end - start) = " + deltaTime);
 
-            // we have to measure distance only between real points - not zeroes \
-            if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
+                // we have to measure distance only between real points - not zeroes \
+                if (startLat != 0.0 && startLong != 0.0 && endLat != 0.0 && endLong != 0.0) {
 
-               MyLog.i("startPoint speed = " + startPoint.getSpeed());
+                    MyLog.i("startPoint speed = " + startPoint.getSpeed());
 
-               // before calculating distance checking if it could be real \
-               if (startPoint.getSpeed() > 1) { // meters per second
+                    // before calculating distance checking if it could be real \
+                    if (startPoint.getSpeed() > 1) { // meters per second
 
-                  // result of calculations is stored inside the resultArray \
-                  Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
-                  MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
+                        // result of calculations is stored inside the resultArray \
+                        Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
+                        MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
 
-                  // quick decision to cut off location noise and count only car movement \
-                  if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
-                     /*
-                     * i usually receive data with much higher values than it should be \
-                     * so it's obvious that i have to make those strange values some lower \
-                     * first simple attempt - to use measurement of speed to correct the result \
-                     */
-
-                     // excessive check '>0' because deltaTime was negative when 'end minus start' \
-                     float predictedDistance = startPoint.getSpeed() * deltaTime;
+                        // quick decision to cut off location noise and count only car movement \
+                        if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
+                         /*
+                         * i usually receive data with much higher values than it should be \
+                         * so it's obvious that i have to make those strange values some lower \
+                         * first simple attempt - to use measurement of speed to correct the result \
+                         */
+                            // excessive check '>0' because deltaTime was negative when 'end minus start' \
+                            float predictedDistance = startPoint.getSpeed() * deltaTime;
 //                     float predictedDistance = deltaTime > 0 ? startPoint.getSpeed() * deltaTime : 0;
-                     MyLog.i(i + " calculations: predictedDistance = " + predictedDistance);
+                            MyLog.i(i + " calculations: predictedDistance = " + predictedDistance);
 
-                     float minimumOfTwo = resultArray[0];
-                     if (predictedDistance < minimumOfTwo)
+                            float minimumOfTwo = resultArray[0];
+                            if (predictedDistance < minimumOfTwo)
 //                     if (predictedDistance != 0 && predictedDistance < minimumOfTwo)
-                        minimumOfTwo = predictedDistance;
+                                minimumOfTwo = predictedDistance;
 
-                     totalDistanceInMeters += minimumOfTwo;
-                  }
-               } // end of check-speed-condition \\
-            } // end of check-four-non-zero-condition \\
-         } // end of hasNext-condition \\
-      } // end of for-loop \\
-      MyLog.i("totalDistanceInMeters = " + totalDistanceInMeters);
+                            totalDistanceInMeters += minimumOfTwo;
+                        }
+                    } // end of check-speed-condition \\
+                } // end of check-four-non-zero-condition \\
+            } // end of hasNext-condition \\
+        } // end of for-loop \\
+        MyLog.i("totalDistanceInMeters = " + totalDistanceInMeters);
 
-      return totalDistanceInMeters;
-   } // end of getTotalDistance-method \\
-
-   // INTERNET_CONNECTION ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-   // it works before every connection attempt \
-   private boolean inetIsConnected() {
-
-      ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-      NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-//      try {
-      if (networkInfo != null && networkInfo.isConnected()) {
-         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_INET_ON));
-//            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_ON);
-         return true;
-      } else {
-         EventBus.getDefault().post(new RadioStateChangeEvent(GlobalKeys.EVENT_INET_OFF));
-//            mPendingIntent.send(GlobalKeys.P_I_CONNECTION_OFF);
-         return false;
-      }
-//      } catch (PendingIntent.CanceledException ce) {
-//         ce.printStackTrace();
-//         return false;
-//      }
-   }
-
-   // my OkHTTP usage to send tracking data to the server - Retrofit didn't work \
-   private void sendInfoToServer() {
-      MyLog.v("sendInfoToServer = started");
-
-      // at first creating object to send to the server \
-      LocationPoint locationPoint = new LocationPoint(mLatitude, mLongitude, mTime, mDistance, mSpeed);
-      // currently speed will not be transmitted to the server \
-
-      Gson gson = new GsonBuilder().create();
-
-      String jsonToSend = gson.toJson(locationPoint, LocationPoint.class);
-      MyLog.v("jsonToSend: " + jsonToSend);
-
-      MediaType JSON = MediaType.parse("application/json; charset=utf-8");
-
-      RequestBody body = RequestBody.create(JSON, jsonToSend);
-
-      try {
-         Request request = new Request.Builder()
-                  .url(mQrFromActivity)
-//               .cacheControl(new CacheControl.Builder().noCache().build()) // no effect \
-                  .post(body)
-                  .build();
-
-         OkHttpClient okHttpClient = new OkHttpClient();
-
-         okHttpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(Call call, IOException e) {
-               MyLog.d("onFailure: " + call.request().method());
-               MyLog.d("onFailure: " + call.request().body().contentType().toString());
-            }
-
-            @Override
-            public void onResponse(Call call, Response response) throws IOException {
-               MyLog.d("onResponse: " + response.message());
-               if (response.isSuccessful()) {
-                  MyLog.d("onResponse: successfull - OkHTTP");
-//                  MyLog.d("onResponse: " + response.body().contentType().toString());
-                  MyLog.d("onResponse: " + response.body().string());
-               } else {
-                  MyLog.d("onResponse: " + call.request().body().contentType().toString());
-                  MyLog.d("sFromResponse: " + response.message());
-               }
-            }
-         });
-      } catch (IllegalArgumentException iae) {
-         iae.printStackTrace();
-         // we must inform activity about wrong qr-code \
-         Intent intent = new Intent().putExtra(GlobalKeys.QR_KEY_INVALID, mQrFromActivity);
-         sendIntentToActivity(intent, GlobalKeys.P_I_CODE_QR_KEY_INVALID);
-      }
-   } // end of sendInfoToServer-method \\
+        return totalDistanceInMeters;
+    } // end of getTotalDistance-method \\
 }

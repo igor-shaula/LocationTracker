@@ -9,6 +9,6 @@
    <dimen name="size_64">64dp</dimen>
 
    <dimen name="textSize">15sp</dimen>
-   <dimen name="bigTextSize">30sp</dimen>
+   <dimen name="bigTextSize">25sp</dimen>
 
 </resources>

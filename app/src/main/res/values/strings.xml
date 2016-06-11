@@ -1,11 +1,7 @@
 <resources>
 
-   <string name="app_name">Geo-tracker</string>
-   <string name="title_activity_qr">QrActivity</string>
+   <string name="app_name">Cute GeoTracker</string>
    <string name="sampleText">text for switch</string>
-
-   <string name="qrCode">QR-code</string>
-   <string name="tracking">Tracking</string>
 
    <string name="gpsStatus">GPS status</string>
    <string name="inetStatus">Connection status</string>
@@ -16,10 +12,6 @@
    <string name="gpsTimeOn">and time of metering as well…</string>
    <string name="passedDistanceInM">Passed distance will be shown here</string>
 
-   <string name="toastNewQR_CodeIsSet">New QR-code is taken and saved</string>
-   <string name="toastOldQR_CodeIsKept">This QR-code is already in use</string>
-   <string name="toastInvalidQR_Code">This QR-code cannot be used!</string>
-   <string name="toastQrCodeIsAbsent">QR-code is absent!</string>
    <string name="toastSwitchGpsOn">Please switch the GPS on</string>
    <string name="toastGpsProviderDisabled">GPS provider disabled</string>
    <string name="toastGpsProviderEnabled">GPS provider enabled</string>
@@ -30,11 +22,7 @@
    <string name="inetConnected">Internet connected</string>
    <string name="inetDisconnected">Internet disconnected</string>
 
-   <string name="textForNewScan">"No available QR-code found\nTouch here to get a new one"</string>
-   <string name="textForPresentScan">"QR-code is already present\nTouch here to get a new one"</string>
    <string name="textForTrackingSwitchedOn">"Tracking launched\nTouch again to stop it"</string>
    <string name="textForTrackingSwitchedOff">"Tracking stopped\nTouch again to launch it"</string>
-   <string name="textForContinuousOn">Continuous mode set ON\nLong click to switch it off</string>
-   <string name="textForContinuousOff">Long click on this button\nto enter continuous mode</string>
 
 </resources>

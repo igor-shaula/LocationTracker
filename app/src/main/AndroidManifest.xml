@@ -12,7 +12,7 @@
 
    <application
       android:allowBackup="true"
-      android:icon="@drawable/logo_map"
+      android:icon="@drawable/geo_logo_new"
       android:label="@string/app_name"
       android:supportsRtl="true"
       android:theme="@style/AppTheme.NoActionBar">
@@ -50,12 +50,6 @@
             <!--<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />-->
          <!--</intent-filter>-->
       </receiver>
-
-      <activity
-         android:name="com.solveast.geo_tracker.activities.QrActivity"
-         android:label="@string/title_activity_qr"
-         android:screenOrientation="portrait"
-         android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
 
    </application>
 
