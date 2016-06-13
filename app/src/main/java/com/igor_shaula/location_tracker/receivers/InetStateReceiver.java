@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker.receiver;
+package com.igor_shaula.location_tracker.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -6,8 +6,8 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
-import com.solveast.geo_tracker.GlobalKeys;
-import com.solveast.geo_tracker.eventbus.RadioStateChangeEvent;
+import com.igor_shaula.location_tracker.events.RadioStateChangeEvent;
+import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 
 import org.greenrobot.eventbus.EventBus;
 

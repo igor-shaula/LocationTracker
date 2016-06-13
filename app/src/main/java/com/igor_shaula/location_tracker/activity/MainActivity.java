@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker.activities;
+package com.igor_shaula.location_tracker.activity;
 
 import android.app.ActivityManager;
 import android.app.PendingIntent;
@@ -18,13 +18,13 @@ import android.support.v7.widget.SwitchCompat;
 import android.widget.CompoundButton;
 import android.widget.Toast;
 
-import com.solveast.geo_tracker.GlobalKeys;
-import com.solveast.geo_tracker.MyLog;
-import com.solveast.geo_tracker.R;
-import com.solveast.geo_tracker.eventbus.RadioStateChangeEvent;
-import com.solveast.geo_tracker.receiver.GpsStateReceiver;
-import com.solveast.geo_tracker.receiver.InetStateReceiver;
-import com.solveast.geo_tracker.service.MainService;
+import com.igor_shaula.location_tracker.R;
+import com.igor_shaula.location_tracker.events.RadioStateChangeEvent;
+import com.igor_shaula.location_tracker.receivers.GpsStateReceiver;
+import com.igor_shaula.location_tracker.receivers.InetStateReceiver;
+import com.igor_shaula.location_tracker.service.MainService;
+import com.igor_shaula.location_tracker.utilities.GlobalKeys;
+import com.igor_shaula.location_tracker.utilities.MyLog;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -106,15 +106,15 @@ public class MainActivity extends AppCompatActivity {
         mPrimaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
         mAccentColor = ContextCompat.getColor(this, R.color.accent);
 
-        // 2 = checking if the service has already being running at the start of this activity \
+        // 1 = checking if the service has already being running at the start of this activity \
         if (isMyServiceRunning(MainService.class)) mTrackingIsOn = true;
         setTrackingSwitchStatus(mTrackingIsOn);
 
-        // 4 = checking the state of internet - only to inform user \
+        // 2 = checking the state of internet - only to inform user \
         isGpsEnabled();
         isInetEnabled();
 
-        // 5 = this check is necessary for correct application relaunch \
+        // 3 = this check is necessary for correct application relaunch \
         updateGpsData(null);
 
     } // end of onCreate-method \
@@ -233,6 +233,7 @@ public class MainActivity extends AppCompatActivity {
       MyLog.v("onActivityResult = requestCode: " + String.valueOf(requestCode));
       MyLog.v("onActivityResult = resultCode: " + String.valueOf(resultCode));
 */
+        // remnants of the big statement before refactoring \
         if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
             // recognizing what has come from the service by contents of resultCode \
             switch (resultCode) {

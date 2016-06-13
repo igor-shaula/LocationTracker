@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-   package="com.solveast.geo_tracker">
+   package="com.igor_shaula.location_tracker">
 
-   <uses-permission android:name="android.permission.CAMERA" />
    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -18,7 +17,7 @@
       android:theme="@style/AppTheme.NoActionBar">
 
       <activity
-         android:name="com.solveast.geo_tracker.activities.MainActivity"
+         android:name="com.igor_shaula.location_tracker.activity.MainActivity"
          android:screenOrientation="portrait">
          <intent-filter>
             <action android:name="android.intent.action.MAIN" />
@@ -27,10 +26,10 @@
       </activity>
 
       <service
-         android:name="com.solveast.geo_tracker.service.MainService"
+         android:name="com.igor_shaula.location_tracker.service.MainService"
          android:enabled="true" />
 
-      <receiver android:name="com.solveast.geo_tracker.receiver.BootReceiver">
+      <receiver android:name="com.igor_shaula.location_tracker.receivers.BootReceiver">
          <intent-filter>
             <action android:name="android.intent.action.BOOT_COMPLETED" />
             <!--<action android:name="android.intent.action.AIRPLANE_MODE"/>-->
@@ -39,13 +38,13 @@
 
       <!-- next receivers are registered at the level of application context - no more is needed -->
 
-      <receiver android:name=".receiver.GpsStateReceiver">
+      <receiver android:name="com.igor_shaula.location_tracker.receivers.GpsStateReceiver">
          <!--<intent-filter>-->
             <!--<action android:name="android.location.PROVIDERS_CHANGED" />-->
          <!--</intent-filter>-->
       </receiver>
 
-      <receiver android:name=".receiver.InetStateReceiver">
+      <receiver android:name="com.igor_shaula.location_tracker.receivers.InetStateReceiver">
          <!--<intent-filter>-->
             <!--<action android:name="android.net.conn.CONNECTIVITY_CHANGE" />-->
          <!--</intent-filter>-->

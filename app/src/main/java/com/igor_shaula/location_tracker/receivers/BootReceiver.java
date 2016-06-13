@@ -1,11 +1,11 @@
-package com.solveast.geo_tracker.receiver;
+package com.igor_shaula.location_tracker.receivers;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import com.solveast.geo_tracker.MyLog;
-import com.solveast.geo_tracker.service.MainService;
+import com.igor_shaula.location_tracker.service.MainService;
+import com.igor_shaula.location_tracker.utilities.MyLog;
 
 /**
  * Created by igor shaula - to reload the service after system reboot \

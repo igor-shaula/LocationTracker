@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker.service;
+package com.igor_shaula.location_tracker.service;
 
 import android.Manifest;
 import android.app.PendingIntent;
@@ -10,19 +10,20 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
 
-import com.solveast.geo_tracker.GlobalKeys;
-import com.solveast.geo_tracker.MyLog;
-import com.solveast.geo_tracker.R;
-import com.solveast.geo_tracker.entity.LocationPoint;
+import com.igor_shaula.location_tracker.R;
+import com.igor_shaula.location_tracker.entity.LocationPoint;
+import com.igor_shaula.location_tracker.storage.StorageActions;
+import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
+import com.igor_shaula.location_tracker.utilities.GlobalKeys;
+import com.igor_shaula.location_tracker.utilities.MyLog;
 
-import io.realm.Realm;
-import io.realm.RealmConfiguration;
-import io.realm.RealmResults;
+import java.util.List;
 
 public class MainService extends Service {
 
@@ -30,10 +31,12 @@ public class MainService extends Service {
     private final static float MIN_DISTANCE_IN_METERS = 10;
 
     private PendingIntent mPendingIntent;
-    private Realm mRealm; // represents instance of the database \
+    private StorageActions mStorageAgent;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
+
+    private Handler mHandler = new Handler();
 
 // LIFECYCLE =======================================================================================
 
@@ -54,47 +57,55 @@ public class MainService extends Service {
             mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
                     GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
 
-        // Create the Realm configuration
-        RealmConfiguration realmConfig = new RealmConfiguration
-                .Builder(this)
-                .deleteRealmIfMigrationNeeded()
-                .build();
-        // Open the Realm for the UI thread.
-        mRealm = Realm.getInstance(realmConfig);
+        // create instance of abstract storage - choose realization only here \
+        mStorageAgent = InMemory.getSingleton();
+//        mStorageAgent = MyRealm.getSingleton(this);
 
-        // initially clearing the database to get proper distance \
-        mRealm.beginTransaction();
-        mRealm.delete(LocationPoint.class);
-//      mRealm.where(LocationPoint.class).findAll().deleteAllFromRealm();
-        mRealm.commitTransaction();
+        // all even potentially hard work is kept in other threads \
+        new Thread(storageRunnable).start();
+        new Thread(jobRunnable).start();
+//        mHandler.post(storageRunnable);
+//        mHandler.post(jobRunnable);
 
-        // main job for the service \
-        gpsTrackingStart();
+//        mHandler.obtainMessage(); ???
 
         return Service.START_REDELIVER_INTENT;
+
+        // TODO: 14.06.2016 use WakeLock to prevent processor from sleeping \
     } // end of onStartCommand-method \\
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        // time to clean all resources \
         mLocationManager.removeUpdates(mPendingIntent);
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
                 && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
             return;
         }
         mLocationManager.removeUpdates(mLocationListener);
+        mHandler.removeCallbacks(storageRunnable);
+        mHandler.removeCallbacks(jobRunnable);
     }
 
-    // PREPARING MECHANISM =============================================================================
+// PREPARING MECHANISM =============================================================================
+
+    private Runnable storageRunnable = new Runnable() {
+        @Override
+        public void run() {
+            mStorageAgent.clearAll();
+        }
+    };
+
+    private Runnable jobRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // main job for the service \
+            gpsTrackingStart();
+        }
+    };
 
     // launched from onStartCommand \
     private void gpsTrackingStart() {
@@ -108,13 +119,13 @@ public class MainService extends Service {
             @Override
             public void onProviderDisabled(String provider) {
                 MyLog.i("onProviderDisabled: " + provider);
-                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderDisabled), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderOff), Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onProviderEnabled(String provider) {
                 MyLog.i("onProviderEnabled: " + provider);
-                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderEnabled), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderOn), Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -134,9 +145,8 @@ public class MainService extends Service {
         // this check is required by IDE - i decided to check both permissions at once \
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                &&
-                ActivityCompat.checkSelfPermission(this,
-                        Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // we can only inform user about absent permissions \
             MyLog.e("permissions are not set well");
             Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
@@ -187,14 +197,12 @@ public class MainService extends Service {
         else mSpeed = 0; // explicitly clearing value from previous possible point \
 //      if(location.hasAccuracy()) ...
 
-        // TODO: 20.05.2016 try to use the app without database for now - to check where's problem \
-
         // the only place of saving current point into database \
-        saveToDB(mLatitude, mLongitude, mTime, mSpeed);
+        mStorageAgent.write(new LocationPoint(mLatitude, mLongitude, mTime, mSpeed));
 
-        RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAllSorted("timeInMs");
-//      RealmResults<LocationPoint> locationPointList = mRealm.where(LocationPoint.class).findAll();
-        int mDistance = (int) getTotalDistance(locationPointList);
+        List<LocationPoint> dataFromStorage = mStorageAgent.readAll();
+
+        int mDistance = (int) getTotalDistance(dataFromStorage);
 
         Intent intentToReturn = new Intent()
                 .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
@@ -215,24 +223,8 @@ public class MainService extends Service {
         }
     }
 
-    // saving to database - realized with RealM \
-    private void saveToDB(double latitude, double longitude, long currentTime, float speed) {
-
-        // All writes must be wrapped in a transaction to facilitate safe multi threading
-        mRealm.beginTransaction();
-
-        LocationPoint locationPoint = mRealm.createObject(LocationPoint.class);
-        locationPoint.setLatitude(latitude);
-        locationPoint.setLongitude(longitude);
-        locationPoint.setTimeInMilliSeconds(currentTime);
-        locationPoint.setSpeed(speed);
-
-        // When the transaction is committed, all changes a synced to disk.
-        mRealm.commitTransaction();
-    }
-
     // returns believable value of total passed distance \
-    private float getTotalDistance(RealmResults<LocationPoint> locationPointList) {
+    private float getTotalDistance(List<LocationPoint> locationPointList) {
         int capacity = locationPointList.size();
         MyLog.i("capacity = " + capacity);
 
@@ -263,11 +255,11 @@ public class MainService extends Service {
                 startLong = startPoint.getLongitude();
 //            endLong = endPoint.getLongitude();
 
-                MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTimeInMilliSeconds());
-                MyLog.i(i + " calculations: endPoint.millis _ = " + endPoint.getTimeInMilliSeconds());
+                MyLog.i(i + " calculations: startPoint.millis = " + startPoint.getTime());
+                MyLog.i(i + " calculations: endPoint.millis _ = " + endPoint.getTime());
                 // somehow result was <0 otherwise - if end minus start \
-                long deltaTime = (endPoint.getTimeInMilliSeconds() - startPoint.getTimeInMilliSeconds()) / 1000;
-//                     long deltaTime = endPoint.getTimeInMilliSeconds() - startPoint.getTimeInMilliSeconds();
+                long deltaTime = (endPoint.getTime() - startPoint.getTime()) / 1000;
+//                     long deltaTime = endPoint.getTime() - startPoint.getTime();
                 MyLog.i(i + " calculations: seconds(end - start) = " + deltaTime);
 
                 // we have to measure distance only between real points - not zeroes \

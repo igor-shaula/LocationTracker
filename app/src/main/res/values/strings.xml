@@ -6,15 +6,15 @@
    <string name="gpsStatus">GPS status</string>
    <string name="inetStatus">Connection status</string>
 
-   <string name="gpsDataOff">Launch tracking to get coordinates</string>
+   <string name="gpsDataOff">Launch tracking\nto get coordinates</string>
    <string name="gpsTimeOff">and time of taking location info</string>
    <string name="gpsDataOn">Soon you will get coordinates…</string>
    <string name="gpsTimeOn">and time of metering as well…</string>
    <string name="passedDistanceInM">Passed distance will be shown here</string>
 
    <string name="toastSwitchGpsOn">Please switch the GPS on</string>
-   <string name="toastGpsProviderDisabled">GPS provider disabled</string>
-   <string name="toastGpsProviderEnabled">GPS provider enabled</string>
+   <string name="toastGpsProviderOff">GPS provider disabled</string>
+   <string name="toastGpsProviderOn">GPS provider enabled</string>
    <string name="toastPermissionsAreNotGiven">Permissions are not given</string>
 
    <string name="gpsEnabled">GPS enabled</string>

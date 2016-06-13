@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker.eventbus;
+package com.igor_shaula.location_tracker.events;
 
 /**
  * Created by igor shaula - to monitor state of GPS and internet availability \

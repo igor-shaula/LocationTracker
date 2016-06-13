@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker;
+package com.igor_shaula.location_tracker;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

@@ -1,4 +1,4 @@
-package com.solveast.geo_tracker;
+package com.igor_shaula.location_tracker.utilities;
 
 /**
  * Created by igor shaula
