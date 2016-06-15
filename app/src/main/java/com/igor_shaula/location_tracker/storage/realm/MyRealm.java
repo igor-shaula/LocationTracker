@@ -61,6 +61,7 @@ public class MyRealm implements StorageActions {
         double longitude = locationPoint.getLongitude();
         long time = locationPoint.getTime();
         float speed = locationPoint.getSpeed();
+        float accuracy = locationPoint.getAccuracy();
 
         // All writes must be wrapped in a transaction to facilitate safe multi threading
         mRealm.beginTransaction();
@@ -70,6 +71,7 @@ public class MyRealm implements StorageActions {
         realmLocationPoint.setLongitude(longitude);
         realmLocationPoint.setTime(time);
         realmLocationPoint.setSpeed(speed);
+        realmLocationPoint.setAccuracy(accuracy);
 
         // When the transaction is committed, all changes a synced to disk.
         mRealm.commitTransaction();
@@ -99,6 +101,7 @@ public class MyRealm implements StorageActions {
             locationPoint.setLongitude(realmLocationPoint.getLongitude());
             locationPoint.setTime(realmLocationPoint.getTime());
             locationPoint.setSpeed(realmLocationPoint.getSpeed());
+            locationPoint.setAccuracy(realmLocationPoint.getAccuracy());
 
             locationPointList.add(locationPoint);
         }

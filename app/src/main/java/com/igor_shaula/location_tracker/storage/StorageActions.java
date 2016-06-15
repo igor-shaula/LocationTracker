@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Created by igor shaula
- * <p>
+ * <p/>
  * this interface is used to be the only agent of storage system \
  */
 public interface StorageActions {

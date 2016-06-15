@@ -12,6 +12,8 @@ import android.location.LocationProvider;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Process;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
@@ -19,24 +21,37 @@ import android.widget.Toast;
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
 import com.igor_shaula.location_tracker.storage.StorageActions;
-import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
+import com.igor_shaula.location_tracker.storage.realm.MyRealm;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
 
 public class MainService extends Service {
 
     private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
-    private final static float MIN_DISTANCE_IN_METERS = 10;
+    private final static float MIN_DISTANCE_IN_METERS = 1;
+    private static final String STORAGE_THREAD = "my storage thread";
+    private static final int STORAGE_INIT_CLEAR = 0;
+    private static final int STORAGE_SAVE_NEW = 1;
+    private static final int STORAGE_READ_ALL = 2;
 
     private PendingIntent mPendingIntent;
-    private StorageActions mStorageAgent;
 
     private LocationManager mLocationManager;
     private LocationListener mLocationListener;
 
-    private Handler mHandler = new Handler();
+    private StorageActions mStorageAgent;
+    private Handler mHandler;
+    private Thread mStorageThread;
+    private int runnableState;
+
+    // service ought not keep data in self - so these variables are crutches for multithreading usage \
+    private double mLatitude, mLongitude;
+    private long mTime;
+    private float mSpeed, mAccuracy;
+    private List<LocationPoint> mDataFromStorage;
 
 // LIFECYCLE =======================================================================================
 
@@ -57,17 +72,16 @@ public class MainService extends Service {
             mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
                     GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
 
-        // create instance of abstract storage - choose realization only here \
-        mStorageAgent = InMemory.getSingleton();
-//        mStorageAgent = MyRealm.getSingleton(this);
+        // it will be used to send messages from inside worker threads and catch them inside UI thread \
+        mHandler = new MyHandler(this);
 
         // all even potentially hard work is kept in other threads \
-        new Thread(storageRunnable).start();
-        new Thread(jobRunnable).start();
-//        mHandler.post(storageRunnable);
-//        mHandler.post(jobRunnable);
+        mStorageThread = new Thread(rStorageTask, STORAGE_THREAD);
+        mStorageThread.setDaemon(true);
+        mStorageThread.start();
 
-//        mHandler.obtainMessage(); ???
+        // finally launching main sequence to get the location data \
+        gpsTrackingStart();
 
         return Service.START_REDELIVER_INTENT;
 
@@ -86,26 +100,13 @@ public class MainService extends Service {
             return;
         }
         mLocationManager.removeUpdates(mLocationListener);
-        mHandler.removeCallbacks(storageRunnable);
-        mHandler.removeCallbacks(jobRunnable);
+        // which way is better - remove every or all at once \
+        mHandler.removeCallbacks(rStorageTask);
+        if (mHandler != null)
+            mHandler.removeCallbacksAndMessages(null);
     }
 
 // PREPARING MECHANISM =============================================================================
-
-    private Runnable storageRunnable = new Runnable() {
-        @Override
-        public void run() {
-            mStorageAgent.clearAll();
-        }
-    };
-
-    private Runnable jobRunnable = new Runnable() {
-        @Override
-        public void run() {
-            // main job for the service \
-            gpsTrackingStart();
-        }
-    };
 
     // launched from onStartCommand \
     private void gpsTrackingStart() {
@@ -182,34 +183,57 @@ public class MainService extends Service {
 
 // ACTIONS FROM LISTENER ===========================================================================
 
-    // this method is called only from inside location listener
+    // this method is called only from inside location listener - works in main thread \
     private void processLocationUpdate(Location location) {
         // only one (current) location point - for only one line of network requests \
 
         MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
 
         // extracting needed fields - we cannot take the whole object because of Realm restrictions \
-        double mLatitude = location.getLatitude();
-        double mLongitude = location.getLongitude();
-        long mTime = location.getTime();
-        float mSpeed;
+        mLatitude = location.getLatitude();
+        mLongitude = location.getLongitude();
+        mTime = location.getTime();
         if (location.hasSpeed()) mSpeed = location.getSpeed();
         else mSpeed = 0; // explicitly clearing value from previous possible point \
-//      if(location.hasAccuracy()) ...
+        if (location.hasAccuracy()) mAccuracy = location.getAccuracy();
+        else mAccuracy = 0; // explicitly clearing value from previous possible point \
 
         // the only place of saving current point into database \
-        mStorageAgent.write(new LocationPoint(mLatitude, mLongitude, mTime, mSpeed));
+        runnableState = 1;
+        mStorageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
 
-        List<LocationPoint> dataFromStorage = mStorageAgent.readAll();
+        final int[] distance = new int[1];
+        // my way to launch one action after another accounting worker threads completion \
+        new Handler(new Handler.Callback() {
+            @Override
+            public boolean handleMessage(Message msg) {
+                switch (msg.what) {
+                    // i have to launch reading data thread only when writing new point is done \
+                    case STORAGE_SAVE_NEW:
+                        MyLog.i("handleMessage: saving thread finished - can begin reading");
+                        // now it is possible to safely read all data from the storage \
+                        runnableState = 2;
+                        mStorageThread.start();
+                        return true;
+                    // begin calculations only when reading thread is completed \
+                    case STORAGE_READ_ALL:
+                        // the next step has to be busy with saving new point of data \
+                        runnableState = 1;
+                        MyLog.i("handleMessage: reading thread finished - can begin calculations");
+                        distance[0] = (int) getTotalDistance(mDataFromStorage);
+                        // preparing and sending data to MainActivity to update its UI \
+                        Intent intentToReturn = new Intent()
+                                .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
+                                .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
+                                .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
+                                .putExtra(GlobalKeys.DISTANCE, distance[0]);
+                        sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
 
-        int mDistance = (int) getTotalDistance(dataFromStorage);
-
-        Intent intentToReturn = new Intent()
-                .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
-                .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
-                .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
-                .putExtra(GlobalKeys.DISTANCE, mDistance);
-        sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
+                        return true;
+                } // end of switch-statement \\
+                return false;
+            } // end of handleMessage-method \\
+        }); // end of Handler instance definition \\
     } // end of processLocationUpdate-method \\
 
 // UTILS ===========================================================================================
@@ -301,4 +325,73 @@ public class MainService extends Service {
 
         return totalDistanceInMeters;
     } // end of getTotalDistance-method \\
+
+// MULTITHREADING ==================================================================================
+
+    private Runnable rStorageTask = new Runnable() {
+        @Override
+        public void run() {
+            // avoiding potential concurrency for resources with main thread \
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+
+            switch (runnableState) {
+                // thread works this way by default but only once from the start of the service \
+                case STORAGE_INIT_CLEAR:
+                    // create instance of abstract storage - choose realization only here \
+                    mStorageAgent = MyRealm.getSingleton(MainService.this);
+//                    mStorageAgent = InMemory.getSingleton();
+                    mStorageAgent.clearAll();
+                    mHandler.sendEmptyMessage(STORAGE_INIT_CLEAR);
+                    break;
+                // saving new point \
+                case STORAGE_SAVE_NEW:
+                    // taking arguments in such way looks like a crutch - but it's needed \
+                    mStorageAgent.write(new LocationPoint(mLatitude, mLongitude, mTime, mSpeed, mAccuracy));
+                    mHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
+                    break;
+                // reading all \
+                case STORAGE_READ_ALL:
+                    mDataFromStorage = mStorageAgent.readAll();
+                    mHandler.sendEmptyMessage(STORAGE_READ_ALL);
+                    break;
+            } // end of switch-statement \\
+        } // end of run-method \\
+    };
+
+    // created to avoid memory leaks if class not static when using default Handler-class \
+    private static class MyHandler extends Handler {
+
+        WeakReference<MainService> weakReference;
+
+        private MyHandler(MainService mainService) {
+            weakReference = new WeakReference<>(mainService);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+
+            MainService mainService = weakReference.get();
+            if (mainService == null) {
+                MyLog.e("handleMessage: mainService == null");
+                return;
+            }
+
+            String whatMeaning = "";
+            switch (msg.what) {
+                case STORAGE_INIT_CLEAR:
+                    whatMeaning = "storage is prepared and cleaned";
+                    break;
+                case STORAGE_SAVE_NEW:
+                    whatMeaning = "new data is written to the storage";
+                    break;
+                case STORAGE_READ_ALL:
+                    whatMeaning = "all data is read from the storage";
+                    break;
+            }
+            // what is need to be updated in UI thread - is here \
+            Toast.makeText(mainService, "handleMessage: " + whatMeaning, Toast.LENGTH_SHORT).show();
+            MyLog.i("handleMessage: " + whatMeaning);
+        }
+    } // end of MyHandler-inner-class \\
 }

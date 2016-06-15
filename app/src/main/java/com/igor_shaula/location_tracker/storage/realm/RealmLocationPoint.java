@@ -7,11 +7,10 @@ import io.realm.RealmObject;
  */
 public class RealmLocationPoint extends RealmObject {
 
-    private double latitude;
-    private double longitude;
+    private double latitude, longitude;
     private long time;
     // just for refinement of distance calculations \
-    private float speed;
+    private float speed, accuracy;
 
     public RealmLocationPoint() {
         // just to preserve it for Realm \
@@ -47,5 +46,13 @@ public class RealmLocationPoint extends RealmObject {
 
     public void setSpeed(float speed) {
         this.speed = speed;
+    }
+
+    public float getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(float accuracy) {
+        this.accuracy = accuracy;
     }
 }

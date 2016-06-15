@@ -229,10 +229,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-/*
-      MyLog.v("onActivityResult = requestCode: " + String.valueOf(requestCode));
-      MyLog.v("onActivityResult = resultCode: " + String.valueOf(resultCode));
-*/
+
         // remnants of the big statement before refactoring \
         if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
             // recognizing what has come from the service by contents of resultCode \

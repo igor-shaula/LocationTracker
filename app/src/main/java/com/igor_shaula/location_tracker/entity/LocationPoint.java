@@ -7,18 +7,18 @@ package com.igor_shaula.location_tracker.entity;
  */
 public class LocationPoint {
 
-    private double latitude;
-    private double longitude;
+    private double latitude, longitude;
     private long time;
     // just for refinement of distance calculations \
-    private float speed;
+    private float speed, accuracy;
 
     public LocationPoint(double latitude, double longitude,
-                         long time, float speed) {
+                         long time, float speed, float accuracy) {
         this.latitude = latitude;
         this.longitude = longitude;
         this.time = time;
         this.speed = speed;
+        this.accuracy = accuracy;
     }
 
     public double getLatitude() {
@@ -51,5 +51,13 @@ public class LocationPoint {
 
     public void setSpeed(float speed) {
         this.speed = speed;
+    }
+
+    public float getAccuracy() {
+        return accuracy;
+    }
+
+    public void setAccuracy(float accuracy) {
+        this.accuracy = accuracy;
     }
 }
