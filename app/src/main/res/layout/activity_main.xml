@@ -5,7 +5,7 @@
     style="@style/MatchMatch"
     android:background="@drawable/my_layout_shape"
     android:orientation="vertical"
-    android:padding="@dimen/size_8"
+    android:padding="@dimen/size_4"
     tools:context=".activity.MainActivity">
 
     <android.support.v7.widget.AppCompatTextView
@@ -18,7 +18,7 @@
 
     <android.support.v7.widget.LinearLayoutCompat
         style="@style/MatchWrap.MyLayout"
-        android:layout_marginTop="@dimen/size_8"
+        android:layout_marginTop="@dimen/size_4"
         android:orientation="horizontal">
 
         <android.support.v7.widget.LinearLayoutCompat
@@ -29,14 +29,14 @@
             <android.support.v7.widget.AppCompatTextView
                 android:id="@+id/actv_GpsStatus"
                 style="@style/MyText"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/gpsStatus" />
 
             <android.support.v7.widget.AppCompatTextView
                 android:id="@+id/actv_InetStatus"
                 style="@style/MyText"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/inetStatus" />
 
@@ -79,9 +79,9 @@
             android:id="@+id/sc_TrackingStatus"
             style="@style/MyButton"
             android:layout_width="0dp"
-            android:layout_height="@dimen/size_64"
-            android:layout_marginLeft="@dimen/size_6"
-            android:layout_marginStart="@dimen/size_6"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/size_4"
+            android:layout_marginStart="@dimen/size_4"
             android:layout_weight="1"
             android:clickable="false"
             android:text="@string/sampleText"
@@ -91,7 +91,7 @@
 
     <android.support.v7.widget.ContentFrameLayout
         style="@style/MatchMatch.Center"
-        android:layout_marginTop="@dimen/size_8"
+        android:layout_marginTop="@dimen/size_4"
         android:background="@drawable/my_layout_shape_light">
 
     </android.support.v7.widget.ContentFrameLayout>

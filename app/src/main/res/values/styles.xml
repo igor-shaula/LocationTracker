@@ -36,7 +36,7 @@
 
     <style name="MatchWrap.MyLayout">
         <item name="android:gravity">center</item>
-        <item name="android:padding">@dimen/size_8</item>
+        <item name="android:padding">@dimen/size_6</item>
         <item name="android:background">@drawable/my_layout_shape_light</item>
     </style>
 
