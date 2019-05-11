@@ -12,11 +12,11 @@ import android.os.Bundle;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.widget.CompoundButton;
+import android.widget.Switch;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.AppCompatTextView;
-import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.content.ContextCompat;
 
 import com.igor_shaula.location_tracker.R;
@@ -34,12 +34,12 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
-    private SwitchCompat scTrackingStatus;
-    private AppCompatTextView actvGpsStatus;
-    private AppCompatTextView actvInetStatus;
-    private AppCompatTextView actvGpsData;
-    private AppCompatTextView actvGpsTime;
-    private AppCompatTextView actvDistance;
+    private Switch scTrackingStatus;
+    private TextView actvGpsStatus;
+    private TextView actvInetStatus;
+    private TextView actvGpsData;
+    private TextView actvGpsTime;
+    private TextView actvDistance;
 
     private int mWhiteColor;
     private int mPrimaryDarkColor;
@@ -67,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
 
         /* now comes the time of getting all views and setting their listeners and properties */
 
-        scTrackingStatus = (SwitchCompat) findViewById(R.id.sc_TrackingStatus);
+        scTrackingStatus = findViewById(R.id.sc_TrackingStatus);
         scTrackingStatus.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
 
@@ -93,11 +93,11 @@ public class MainActivity extends AppCompatActivity {
                 } // end of OnCheckedChangeListener-instance defenition \\
         );
 
-        actvGpsStatus = (AppCompatTextView) findViewById(R.id.actv_GpsStatus);
-        actvInetStatus = (AppCompatTextView) findViewById(R.id.actv_InetStatus);
-        actvGpsData = (AppCompatTextView) findViewById(R.id.actv_GpsData);
-        actvGpsTime = (AppCompatTextView) findViewById(R.id.actv_GpsTime);
-        actvDistance = (AppCompatTextView) findViewById(R.id.actvDistance);
+        actvGpsStatus = findViewById(R.id.actv_GpsStatus);
+        actvInetStatus = findViewById(R.id.actv_InetStatus);
+        actvGpsData = findViewById(R.id.actv_GpsData);
+        actvGpsTime = findViewById(R.id.actv_GpsTime);
+        actvDistance = findViewById(R.id.actvDistance);
 
         mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
@@ -234,14 +234,11 @@ public class MainActivity extends AppCompatActivity {
         // remnants of the big statement before refactoring \
         if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
             // recognizing what has come from the service by contents of resultCode \
-            switch (resultCode) {
-                // result about GPS from service - incoming intent available \
-                case GlobalKeys.P_I_CODE_DATA_FROM_GPS: {
-                    MyLog.v("receiving new location point from the service");
-                    if (mTrackingIsOn)
-                        updateGpsData(data); // data from GPS is obtained and the service is running \
-                    break;
-                }
+            // result about GPS from service - incoming intent available \
+            if (resultCode == GlobalKeys.P_I_CODE_DATA_FROM_GPS) {
+                MyLog.v("receiving new location point from the service");
+                if (mTrackingIsOn)
+                    updateGpsData(data); // data from GPS is obtained and the service is running \
             } // end of switch-statement \\
         } // end of if-statement \\
     } // end of onActivityResult-method \\
@@ -252,7 +249,7 @@ public class MainActivity extends AppCompatActivity {
             // preparing fields for location arguments \
             double latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE, 0.0);
             double longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE, 0.0);
-            String coordinates = String.valueOf("Lat. " + latitude + " / Long. " + longitude);
+            String coordinates = "Lat. " + latitude + " / Long. " + longitude;
             actvGpsData.setText(coordinates);
 
             // preparing field for time data \
@@ -260,10 +257,10 @@ public class MainActivity extends AppCompatActivity {
             Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(timeOfTakingCoordinates);
             String stringTime = calendar.getTime().toString();
-            actvGpsTime.setText(String.valueOf("Time: " + stringTime));
+            actvGpsTime.setText("Time: " + stringTime);
 
             int distance = data.getIntExtra(GlobalKeys.DISTANCE, 0);
-            actvDistance.setText(String.valueOf("Passed distance: " + distance + " m"));
+            actvDistance.setText("Passed distance: " + distance + " m");
 
             actvGpsData.setTextColor(mAccentColor);
             actvGpsTime.setTextColor(mAccentColor);

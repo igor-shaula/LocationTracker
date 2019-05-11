@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.v7.widget.LinearLayoutCompat xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     style="@style/MatchMatch"
     android:background="@drawable/my_layout_shape"
@@ -8,7 +8,7 @@
     android:padding="@dimen/size_4"
     tools:context=".activity.MainActivity">
 
-    <android.support.v7.widget.AppCompatTextView
+    <TextView
         style="@style/MyText.Big"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -16,84 +16,83 @@
         android:text="@string/app_name"
         android:textColor="@color/primary_dark" />
 
-    <android.support.v7.widget.LinearLayoutCompat
+    <LinearLayout
         style="@style/MatchWrap.MyLayout"
         android:layout_marginTop="@dimen/size_4"
         android:orientation="horizontal">
 
-        <android.support.v7.widget.LinearLayoutCompat
+        <LinearLayout
             style="@style/Weight_1.Width_0"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/actv_GpsStatus"
                 style="@style/MyText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/gpsStatus" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/actv_InetStatus"
                 style="@style/MyText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/inetStatus" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 style="@style/MyText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/actv_GpsData"
                 style="@style/MyText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/gpsDataOff" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/actv_GpsTime"
                 style="@style/MyText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/gpsTimeOff" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 style="@style/MyText"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="" />
 
-            <android.support.v7.widget.AppCompatTextView
+            <TextView
                 android:id="@+id/actvDistance"
                 style="@style/MyText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/passedDistanceInM" />
 
-        </android.support.v7.widget.LinearLayoutCompat>
+        </LinearLayout>
 
-        <android.support.v7.widget.SwitchCompat
+        <Switch
             android:id="@+id/sc_TrackingStatus"
             style="@style/MyButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/size_4"
             android:layout_marginStart="@dimen/size_4"
             android:layout_weight="1"
             android:clickable="false"
             android:text="@string/sampleText"
             android:textAllCaps="false" />
 
-    </android.support.v7.widget.LinearLayoutCompat>
+    </LinearLayout>
 
-    <android.support.v7.widget.ContentFrameLayout
+    <FrameLayout
         style="@style/MatchMatch.Center"
         android:layout_marginTop="@dimen/size_4"
         android:background="@drawable/my_layout_shape_light">
 
-    </android.support.v7.widget.ContentFrameLayout>
+    </FrameLayout>
 
-</android.support.v7.widget.LinearLayoutCompat>
+</LinearLayout>
