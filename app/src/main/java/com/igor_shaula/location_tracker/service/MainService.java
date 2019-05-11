@@ -14,14 +14,16 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Process;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
 import android.widget.Toast;
+
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
 import com.igor_shaula.location_tracker.storage.StorageActions;
-import com.igor_shaula.location_tracker.storage.realm.MyRealm;
+//import com.igor_shaula.location_tracker.storage.realm.MyRealm;
+import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
 
@@ -338,8 +340,8 @@ public class MainService extends Service {
                 // thread works this way by default but only once from the start of the service \
                 case STORAGE_INIT_CLEAR:
                     // create instance of abstract storage - choose realization only here \
-                    mStorageAgent = MyRealm.getSingleton(MainService.this);
-//                    mStorageAgent = InMemory.getSingleton();
+//                    mStorageAgent = MyRealm.getSingleton(MainService.this);
+                    mStorageAgent = InMemory.getSingleton();
                     mStorageAgent.clearAll();
                     mHandler.sendEmptyMessage(STORAGE_INIT_CLEAR);
                     break;

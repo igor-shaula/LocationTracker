@@ -1,3 +1,4 @@
+/*
 package com.igor_shaula.location_tracker.storage.realm;
 
 import android.content.Context;
@@ -13,9 +14,11 @@ import io.realm.Realm;
 import io.realm.RealmConfiguration;
 import io.realm.RealmResults;
 
+*/
 /**
  * Created by igor shaula
- */
+ *//*
+
 public class MyRealm implements StorageActions {
 
     private Realm mRealm;
@@ -115,4 +118,4 @@ public class MyRealm implements StorageActions {
         mRealm.delete(RealmLocationPoint.class);
         mRealm.commitTransaction();
     }
-}
+}*/

@@ -11,12 +11,13 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.AppCompatTextView;
-import android.support.v7.widget.SwitchCompat;
 import android.widget.CompoundButton;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.AppCompatTextView;
+import androidx.appcompat.widget.SwitchCompat;
+import androidx.core.content.ContextCompat;
 
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.events.RadioStateChangeEvent;
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-      /* now comes the time of getting all views and setting their listeners and properties */
+        /* now comes the time of getting all views and setting their listeners and properties */
 
         scTrackingStatus = (SwitchCompat) findViewById(R.id.sc_TrackingStatus);
         scTrackingStatus.setOnCheckedChangeListener(
@@ -147,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
         // checking the state of GPS - inform user and later ask him to enable GPS if needed \
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         boolean isGpsEnabled = locationManager != null
-                && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+                                       && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
         setActvGpsStatus(isGpsEnabled);
         return isGpsEnabled;
     }

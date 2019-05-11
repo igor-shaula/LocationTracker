@@ -1,10 +1,13 @@
+/*
 package com.igor_shaula.location_tracker.storage.realm;
 
 import io.realm.RealmObject;
 
+*/
 /**
  * Created by igor shaula - to hold data for GSON and work with Realm \
- */
+ *//*
+
 public class RealmLocationPoint extends RealmObject {
 
     private double latitude, longitude;
@@ -55,4 +58,4 @@ public class RealmLocationPoint extends RealmObject {
     public void setAccuracy(float accuracy) {
         this.accuracy = accuracy;
     }
-}
+}*/
