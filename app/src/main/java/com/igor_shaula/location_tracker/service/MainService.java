@@ -16,13 +16,13 @@ import android.os.Message;
 import android.os.Process;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
 import com.igor_shaula.location_tracker.storage.StorageActions;
-//import com.igor_shaula.location_tracker.storage.realm.MyRealm;
 import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
@@ -31,6 +31,8 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
+
+//import com.igor_shaula.location_tracker.storage.realm.MyRealm;
 
 public class MainService extends Service {
 
@@ -41,21 +43,21 @@ public class MainService extends Service {
     private static final int STORAGE_SAVE_NEW = 1;
     private static final int STORAGE_READ_ALL = 2;
 
-    private PendingIntent mPendingIntent;
+    private PendingIntent pendingIntent;
 
-    private LocationManager mLocationManager;
-    private LocationListener mLocationListener;
+    private LocationManager locationManager;
+    private LocationListener locationListener;
 
-    private StorageActions mStorageAgent;
-    private Handler mHandler;
-    private Thread mStorageThread;
+    private StorageActions storageActions;
+    private Handler mainHandler;
+    private Thread storageThread;
     private int runnableState;
 
     // service ought not keep data in self - so these variables are crutches for multithreading usage \
-    private double mLatitude, mLongitude;
-    private long mTime;
-    private float mSpeed, mAccuracy;
-    private List<LocationPoint> mDataFromStorage;
+    private double dataLatitude, dataLongitude;
+    private long dataTime;
+    private float dataSpeed, dataAccuracy;
+    private List<LocationPoint> locationPointList;
 
 // LIFECYCLE =======================================================================================
 
@@ -70,19 +72,19 @@ public class MainService extends Service {
         MyLog.v("onStartCommand = MainService started");
 
         // now starting service as from zero \
-        mPendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
+        pendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
         // when service is restarted after reboot - intent is empty \
-        if (mPendingIntent == null)
-            mPendingIntent = PendingIntent.getActivity(getApplicationContext(),
+        if (pendingIntent == null)
+            pendingIntent = PendingIntent.getActivity(getApplicationContext(),
                     GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
 
         // it will be used to send messages from inside worker threads and catch them inside UI thread \
-        mHandler = new MyHandler(this);
+        mainHandler = new MyHandler(this);
 
         // all even potentially hard work is kept in other threads \
-        mStorageThread = new Thread(rStorageTask, STORAGE_THREAD);
-        mStorageThread.setDaemon(true);
-        mStorageThread.start();
+        storageThread = new Thread(rStorageTask, STORAGE_THREAD);
+        storageThread.setDaemon(true);
+        storageThread.start();
 
         // finally launching main sequence to get the location data \
         gpsTrackingStart();
@@ -96,18 +98,18 @@ public class MainService extends Service {
     public void onDestroy() {
         super.onDestroy();
         // time to clean all resources \
-        mLocationManager.removeUpdates(mPendingIntent);
+        locationManager.removeUpdates(pendingIntent);
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
+                    && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return;
         }
-        mLocationManager.removeUpdates(mLocationListener);
+        locationManager.removeUpdates(locationListener);
         // which way is better - remove every or all at once \
-        mHandler.removeCallbacks(rStorageTask);
-        if (mHandler != null)
-            mHandler.removeCallbacksAndMessages(null);
+        mainHandler.removeCallbacks(rStorageTask);
+        if (mainHandler != null)
+            mainHandler.removeCallbacksAndMessages(null);
     }
 
 // PREPARING MECHANISM =============================================================================
@@ -116,10 +118,10 @@ public class MainService extends Service {
     private void gpsTrackingStart() {
 
         // this is the global data source of all location information \
-        mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
         // for now all actions are launched from inside this listener \
-        mLocationListener = new LocationListener() {
+        locationListener = new LocationListener() {
 
             @Override
             public void onProviderDisabled(String provider) {
@@ -150,7 +152,7 @@ public class MainService extends Service {
         // this check is required by IDE - i decided to check both permissions at once \
         if (ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                && ActivityCompat.checkSelfPermission(this,
+                    && ActivityCompat.checkSelfPermission(this,
                 Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // we can only inform user about absent permissions \
             MyLog.e("permissions are not set well");
@@ -166,21 +168,21 @@ public class MainService extends Service {
                   LocationManager.GPS_PROVIDER // for GPS - fine
          };
          for (String provider : providers) {
-            mLocationManager.requestLocationUpdates(
+            locationManager.requestLocationUpdates(
                      provider,
                      MIN_PERIOD_MILLISECONDS,
                      MIN_DISTANCE_IN_METERS,
-                     mLocationListener);
-            LocationProvider locationProvider = mLocationManager.getProvider(provider);
+                     locationListener);
+            LocationProvider locationProvider = locationManager.getProvider(provider);
             MyLog.i("accuracy of " + provider + " = " + locationProvider.getAccuracy());
          }
 */
-            mLocationManager.requestLocationUpdates(
+            locationManager.requestLocationUpdates(
                     LocationManager.GPS_PROVIDER, // for GPS - fine precision
                     MIN_PERIOD_MILLISECONDS,
                     MIN_DISTANCE_IN_METERS,
-                    mLocationListener);
-            LocationProvider locationProvider = mLocationManager.getProvider(LocationManager.GPS_PROVIDER);
+                    locationListener);
+            final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
             MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
         }
     } // end of gpsTrackingStart-method \\
@@ -194,43 +196,43 @@ public class MainService extends Service {
         MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
 
         // extracting needed fields - we cannot take the whole object because of Realm restrictions \
-        mLatitude = location.getLatitude();
-        mLongitude = location.getLongitude();
-        mTime = location.getTime();
-        if (location.hasSpeed()) mSpeed = location.getSpeed();
-        else mSpeed = 0; // explicitly clearing value from previous possible point \
-        if (location.hasAccuracy()) mAccuracy = location.getAccuracy();
-        else mAccuracy = 0; // explicitly clearing value from previous possible point \
+        dataLatitude = location.getLatitude();
+        dataLongitude = location.getLongitude();
+        dataTime = location.getTime();
+        if (location.hasSpeed()) dataSpeed = location.getSpeed();
+        else dataSpeed = 0; // explicitly clearing value from previous possible point \
+        if (location.hasAccuracy()) dataAccuracy = location.getAccuracy();
+        else dataAccuracy = 0; // explicitly clearing value from previous possible point \
 
         // the only place of saving current point into database \
         runnableState = 1;
-        mStorageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
+        storageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
 
         final int[] distance = new int[1];
         // my way to launch one action after another accounting worker threads completion \
         new Handler(new Handler.Callback() {
             @Override
-            public boolean handleMessage(Message msg) {
+            public boolean handleMessage(@NotNull Message msg) {
                 switch (msg.what) {
                     // i have to launch reading data thread only when writing new point is done \
                     case STORAGE_SAVE_NEW:
                         MyLog.i("handleMessage: saving thread finished - can begin reading");
                         // now it is possible to safely read all data from the storage \
                         runnableState = 2;
-                        mStorageThread.start();
+                        storageThread.start();
                         return true;
                     // begin calculations only when reading thread is completed \
                     case STORAGE_READ_ALL:
                         // the next step has to be busy with saving new point of data \
                         runnableState = 1;
                         MyLog.i("handleMessage: reading thread finished - can begin calculations");
-                        distance[0] = (int) getTotalDistance(mDataFromStorage);
+                        distance[0] = (int) getTotalDistance(locationPointList);
                         // preparing and sending data to MainActivity to update its UI \
-                        Intent intentToReturn = new Intent()
-                                .putExtra(GlobalKeys.GPS_LATITUDE, mLatitude)
-                                .putExtra(GlobalKeys.GPS_LONGITUDE, mLongitude)
-                                .putExtra(GlobalKeys.GPS_TAKING_TIME, mTime)
-                                .putExtra(GlobalKeys.DISTANCE, distance[0]);
+                        final Intent intentToReturn = new Intent()
+                                                              .putExtra(GlobalKeys.GPS_LATITUDE, dataLatitude)
+                                                              .putExtra(GlobalKeys.GPS_LONGITUDE, dataLongitude)
+                                                              .putExtra(GlobalKeys.GPS_TAKING_TIME, dataTime)
+                                                              .putExtra(GlobalKeys.DISTANCE, distance[0]);
                         sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
 
                         return true;
@@ -243,9 +245,9 @@ public class MainService extends Service {
 // UTILS ===========================================================================================
 
     // universal point to send info to MainActivity \
-    private void sendIntentToActivity(Intent intent, int code) {
+    private void sendIntentToActivity(@NonNull Intent intent, int code) {
         try {
-            mPendingIntent.send(this, code, intent);
+            pendingIntent.send(this, code, intent);
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
@@ -304,11 +306,11 @@ public class MainService extends Service {
 
                         // quick decision to cut off location noise and count only car movement \
                         if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
-                         /*
-                         * i usually receive data with much higher values than it should be \
-                         * so it's obvious that i have to make those strange values some lower \
-                         * first simple attempt - to use measurement of speed to correct the result \
-                         */
+                            /*
+                             * i usually receive data with much higher values than it should be \
+                             * so it's obvious that i have to make those strange values some lower \
+                             * first simple attempt - to use measurement of speed to correct the result \
+                             */
                             // excessive check '>0' because deltaTime was negative when 'end minus start' \
                             float predictedDistance = startPoint.getSpeed() * deltaTime;
 //                     float predictedDistance = deltaTime > 0 ? startPoint.getSpeed() * deltaTime : 0;
@@ -342,21 +344,21 @@ public class MainService extends Service {
                 // thread works this way by default but only once from the start of the service \
                 case STORAGE_INIT_CLEAR:
                     // create instance of abstract storage - choose realization only here \
-//                    mStorageAgent = MyRealm.getSingleton(MainService.this);
-                    mStorageAgent = InMemory.getSingleton();
-                    mStorageAgent.clearAll();
-                    mHandler.sendEmptyMessage(STORAGE_INIT_CLEAR);
+//                    storageActions = MyRealm.getSingleton(MainService.this);
+                    storageActions = InMemory.getSingleton();
+                    storageActions.clearAll();
+                    mainHandler.sendEmptyMessage(STORAGE_INIT_CLEAR);
                     break;
                 // saving new point \
                 case STORAGE_SAVE_NEW:
                     // taking arguments in such way looks like a crutch - but it's needed \
-                    mStorageAgent.write(new LocationPoint(mLatitude, mLongitude, mTime, mSpeed, mAccuracy));
-                    mHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
+                    storageActions.write(new LocationPoint(dataLatitude, dataLongitude, dataTime, dataSpeed, dataAccuracy));
+                    mainHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
                     break;
                 // reading all \
                 case STORAGE_READ_ALL:
-                    mDataFromStorage = mStorageAgent.readAll();
-                    mHandler.sendEmptyMessage(STORAGE_READ_ALL);
+                    locationPointList = storageActions.readAll();
+                    mainHandler.sendEmptyMessage(STORAGE_READ_ALL);
                     break;
             } // end of switch-statement \\
         } // end of run-method \\
