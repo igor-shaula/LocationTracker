@@ -27,6 +27,8 @@ import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.lang.ref.WeakReference;
 import java.util.List;
 
@@ -370,7 +372,7 @@ public class MainService extends Service {
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(@NotNull Message msg) {
             super.handleMessage(msg);
 
             MainService mainService = weakReference.get();

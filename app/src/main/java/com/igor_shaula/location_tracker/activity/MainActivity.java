@@ -16,6 +16,7 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -34,20 +35,20 @@ import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
 
-    private Switch scTrackingStatus;
-    private TextView actvGpsStatus;
-    private TextView actvInetStatus;
-    private TextView actvGpsData;
-    private TextView actvGpsTime;
-    private TextView actvDistance;
+    private Switch sTrackingStatus;
+    private TextView tvGpsStatus;
+    private TextView tvInetStatus;
+    private TextView tvGpsData;
+    private TextView tvGpsTime;
+    private TextView tvDistance;
 
-    private int mWhiteColor;
-    private int mPrimaryDarkColor;
-    private int mPrimaryTextColor;
-    private int mAccentColor;
-    private boolean mTrackingIsOn;
+    private static int whiteColor;
+    private static int primaryDarkColor;
+    private static int primaryTextColor;
+    private static int accentColor;
+    private boolean trackingIsOn;
 
-    private Vibrator mVibrator;
+    private Vibrator vibrator;
 
 // LIFECYCLE =======================================================================================
 
@@ -67,8 +68,8 @@ public class MainActivity extends AppCompatActivity {
 
         /* now comes the time of getting all views and setting their listeners and properties */
 
-        scTrackingStatus = findViewById(R.id.sc_TrackingStatus);
-        scTrackingStatus.setOnCheckedChangeListener(
+        sTrackingStatus = findViewById(R.id.sc_TrackingStatus);
+        sTrackingStatus.setOnCheckedChangeListener(
                 new CompoundButton.OnCheckedChangeListener() {
 
                     @Override
@@ -77,39 +78,39 @@ public class MainActivity extends AppCompatActivity {
                         if (isChecked) {
                             if (isGpsEnabled()) {
                                 startTracking();
-                                actvGpsData.setText(getString(R.string.gpsDataOn));
-                                actvGpsTime.setText(getString(R.string.gpsTimeOn));
+                                tvGpsData.setText(getString(R.string.gpsDataOn));
+                                tvGpsTime.setText(getString(R.string.gpsTimeOn));
                             } else {
                                 showSystemScreenForGps();
                                 setTrackingSwitchStatus(false);
                             }
                         } else {
                             stopTracking();
-                            actvGpsData.setText(getString(R.string.gpsDataOff));
-                            actvGpsTime.setText(getString(R.string.gpsTimeOff));
+                            tvGpsData.setText(getString(R.string.gpsDataOff));
+                            tvGpsTime.setText(getString(R.string.gpsTimeOff));
                         }
                         updateGpsData(null);
-                    } // end of onCheckedChanged-method \\
-                } // end of OnCheckedChangeListener-instance defenition \\
+                    }
+                }
         );
 
-        actvGpsStatus = findViewById(R.id.actv_GpsStatus);
-        actvInetStatus = findViewById(R.id.actv_InetStatus);
-        actvGpsData = findViewById(R.id.actv_GpsData);
-        actvGpsTime = findViewById(R.id.actv_GpsTime);
-        actvDistance = findViewById(R.id.actvDistance);
+        tvGpsStatus = findViewById(R.id.actv_GpsStatus);
+        tvInetStatus = findViewById(R.id.actv_InetStatus);
+        tvGpsData = findViewById(R.id.actv_GpsData);
+        tvGpsTime = findViewById(R.id.actv_GpsTime);
+        tvDistance = findViewById(R.id.actvDistance);
 
-        mVibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // 0 = beautiful technique to get colors values in non-deprecated way \
-        mWhiteColor = ContextCompat.getColor(this, android.R.color.white);
-        mPrimaryDarkColor = ContextCompat.getColor(this, R.color.primary_dark);
-        mPrimaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
-        mAccentColor = ContextCompat.getColor(this, R.color.accent);
+        whiteColor = ContextCompat.getColor(this, android.R.color.white);
+        primaryDarkColor = ContextCompat.getColor(this, R.color.primary_dark);
+        primaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
+        accentColor = ContextCompat.getColor(this, R.color.accent);
 
         // 1 = checking if the service has already being running at the start of this activity \
-        if (isMyServiceRunning(MainService.class)) mTrackingIsOn = true;
-        setTrackingSwitchStatus(mTrackingIsOn);
+        if (isMyServiceRunning()) trackingIsOn = true;
+        setTrackingSwitchStatus(trackingIsOn);
 
         // 2 = checking the state of internet - only to inform user \
         isGpsEnabled();
@@ -119,6 +120,8 @@ public class MainActivity extends AppCompatActivity {
         updateGpsData(null);
 
     } // end of onCreate-method \
+
+    // TODO: 12.05.2019 get rid of Eventbus ASAP
 
     @Override
     public void onStart() {
@@ -135,10 +138,16 @@ public class MainActivity extends AppCompatActivity {
 // CHECKERS & VIEW STATE SWITCHERS =================================================================
 
     // crazy simple magic method - it finds my service among others \
-    private boolean isMyServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) return true;
+    private boolean isMyServiceRunning() {
+        final ActivityManager activityManager =
+                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        if (activityManager == null) {
+            MyLog.e("activityManager is null - we must not ever see this");
+            return false;
+        }
+        for (ActivityManager.RunningServiceInfo service :
+                activityManager.getRunningServices(Integer.MAX_VALUE)) { // this may take a while
+            if (MainService.class.getName().equals(service.service.getClassName())) return true;
         }
         return false;
     }
@@ -146,60 +155,62 @@ public class MainActivity extends AppCompatActivity {
     // totally independent checking \
     private boolean isGpsEnabled() { // also changes appearance of GPS text view \
         // checking the state of GPS - inform user and later ask him to enable GPS if needed \
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean isGpsEnabled = locationManager != null
-                                       && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        setActvGpsStatus(isGpsEnabled);
+        final LocationManager locationManager =
+                (LocationManager) getSystemService(LOCATION_SERVICE);
+        boolean isGpsEnabled =
+                locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        setTvGpsStatus(isGpsEnabled);
         return isGpsEnabled;
     }
 
     // totally independent checking \
     private boolean isInetEnabled() { // also changes appearance of inet info view \
-        ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+        final ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = null;
         if (connectivityManager != null)
             networkInfo = connectivityManager.getActiveNetworkInfo();
         boolean isInetEnabled = networkInfo != null && networkInfo.isConnected();
-        setActvInetStatus(isInetEnabled);
+        setTvInetStatus(isInetEnabled);
         return isInetEnabled;
     }
 
     // providing user with info about GPS sensor availability \
-    private void setActvGpsStatus(boolean isGpsEnabled) {
+    private void setTvGpsStatus(boolean isGpsEnabled) {
         if (isGpsEnabled) {
-            actvGpsStatus.setText(getString(R.string.gpsEnabled));
-            actvGpsStatus.setTextColor(mPrimaryDarkColor);
+            tvGpsStatus.setText(getString(R.string.gpsEnabled));
+            tvGpsStatus.setTextColor(primaryDarkColor);
         } else {
-            actvGpsStatus.setText(getString(R.string.gpsDisabled));
-            actvGpsStatus.setTextColor(mPrimaryTextColor);
+            tvGpsStatus.setText(getString(R.string.gpsDisabled));
+            tvGpsStatus.setTextColor(primaryTextColor);
         }
     }
 
     // giving user info about internet connection availability \
-    private void setActvInetStatus(boolean isInetEnabled) {
+    private void setTvInetStatus(boolean isInetEnabled) {
         if (isInetEnabled) {
-            actvInetStatus.setText(getString(R.string.inetConnected));
-            actvInetStatus.setTextColor(mPrimaryDarkColor);
+            tvInetStatus.setText(getString(R.string.inetConnected));
+            tvInetStatus.setTextColor(primaryDarkColor);
         } else {
-            actvInetStatus.setText(getString(R.string.inetDisconnected));
-            actvInetStatus.setTextColor(mPrimaryTextColor);
+            tvInetStatus.setText(getString(R.string.inetDisconnected));
+            tvInetStatus.setTextColor(primaryTextColor);
         }
     }
 
     private void setTrackingSwitchStatus(boolean statusOn) {
         if (statusOn) {
-            scTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOn));
-            scTrackingStatus.setTextColor(mPrimaryDarkColor);
-            scTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape);
+            sTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOn));
+            sTrackingStatus.setTextColor(primaryDarkColor);
+            sTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape);
             // informing user about switching on action \
-            mVibrator.vibrate(100);
+            vibrator.vibrate(100);
         } else {
-            scTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOff));
-            scTrackingStatus.setTextColor(mWhiteColor);
-            scTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape_dark);
+            sTrackingStatus.setText(getString(R.string.textForTrackingSwitchedOff));
+            sTrackingStatus.setTextColor(whiteColor);
+            sTrackingStatus.setBackgroundResource(R.drawable.my_rounded_button_shape_dark);
         }
-        scTrackingStatus.setChecked(statusOn);
-        mTrackingIsOn = statusOn;
+        sTrackingStatus.setChecked(statusOn);
+        trackingIsOn = statusOn;
     }
 
 // MAIN SET OF METHODS =============================================================================
@@ -212,8 +223,9 @@ public class MainActivity extends AppCompatActivity {
 
     private void startTracking() {
         // preparing intent for qr-code sending service \
-        PendingIntent pendingIntent = createPendingResult(GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
-        Intent intentServiceGps = new Intent(this, MainService.class);
+        final PendingIntent pendingIntent =
+                createPendingResult(GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
+        final Intent intentServiceGps = new Intent(this, MainService.class);
         intentServiceGps.putExtra(GlobalKeys.P_I_KEY, pendingIntent);
 
         startService(intentServiceGps);
@@ -231,50 +243,48 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        // remnants of the big statement before refactoring \
         if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
-            // recognizing what has come from the service by contents of resultCode \
-            // result about GPS from service - incoming intent available \
             if (resultCode == GlobalKeys.P_I_CODE_DATA_FROM_GPS) {
                 MyLog.v("receiving new location point from the service");
-                if (mTrackingIsOn)
+                if (trackingIsOn)
                     updateGpsData(data); // data from GPS is obtained and the service is running \
-            } // end of switch-statement \\
-        } // end of if-statement \\
-    } // end of onActivityResult-method \\
+            }
+        }
+    }
 
-    private void updateGpsData(Intent data) {
+    private void updateGpsData(@Nullable Intent data) {
         if (data != null) {
 
             // preparing fields for location arguments \
             double latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE, 0.0);
             double longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE, 0.0);
-            String coordinates = "Lat. " + latitude + " / Long. " + longitude;
-            actvGpsData.setText(coordinates);
+            final String coordinates = "Lat. " + latitude + " / Long. " + longitude;
+            tvGpsData.setText(coordinates);
 
             // preparing field for time data \
             long timeOfTakingCoordinates = data.getLongExtra(GlobalKeys.GPS_TAKING_TIME, 0);
-            Calendar calendar = Calendar.getInstance();
+            final Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(timeOfTakingCoordinates);
-            String stringTime = calendar.getTime().toString();
-            actvGpsTime.setText("Time: " + stringTime);
+            final String stringTime = "Time: " + calendar.getTime().toString();
+            tvGpsTime.setText(stringTime);
 
             int distance = data.getIntExtra(GlobalKeys.DISTANCE, 0);
-            actvDistance.setText("Passed distance: " + distance + " m");
+            final String distanceText = "Passed distance: " + distance + " m";
+            tvDistance.setText(distanceText);
 
-            actvGpsData.setTextColor(mAccentColor);
-            actvGpsTime.setTextColor(mAccentColor);
+            tvGpsData.setTextColor(accentColor);
+            tvGpsTime.setTextColor(accentColor);
         } else {
             // data is absent - we have nothing to show \
-            actvGpsData.setTextColor(mPrimaryTextColor);
-            actvGpsTime.setTextColor(mPrimaryTextColor);
+            tvGpsData.setTextColor(primaryTextColor);
+            tvGpsTime.setTextColor(primaryTextColor);
 
-            if (isMyServiceRunning(MainService.class)) {
-                actvGpsData.setText(getString(R.string.gpsDataOn));
-                actvGpsTime.setText(getString(R.string.gpsTimeOn));
+            if (isMyServiceRunning()) {
+                tvGpsData.setText(getString(R.string.gpsDataOn));
+                tvGpsTime.setText(getString(R.string.gpsTimeOn));
             } else {
-                actvGpsData.setText(getString(R.string.gpsDataOff));
-                actvGpsTime.setText(getString(R.string.gpsTimeOff));
+                tvGpsData.setText(getString(R.string.gpsDataOff));
+                tvGpsTime.setText(getString(R.string.gpsTimeOff));
             }
         }
     } // end of updateGpsData-method \\
@@ -289,16 +299,16 @@ public class MainActivity extends AppCompatActivity {
 
         switch (event.getWhatIsChanged()) {
             case GlobalKeys.EVENT_INET_ON:
-                setActvInetStatus(true);
+                setTvInetStatus(true);
                 break;
             case GlobalKeys.EVENT_INET_OFF:
-                setActvInetStatus(false);
+                setTvInetStatus(false);
                 break;
             case GlobalKeys.EVENT_GPS_ON:
-                setActvGpsStatus(true);
+                setTvGpsStatus(true);
                 break;
             case GlobalKeys.EVENT_GPS_OFF:
-                setActvGpsStatus(false);
+                setTvGpsStatus(false);
                 break;
         }
     }
