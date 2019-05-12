@@ -1,14 +1,12 @@
 package com.igor_shaula.location_tracker.activity;
 
 import android.Manifest;
-import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -83,7 +81,9 @@ public class MainActivity extends AppCompatActivity {
                     public void onCheckedChanged(CompoundButton buttonView , boolean isChecked) {
                         // getting some touch feedback about start/stop action \
                         if (isChecked) {
-                            if (isGpsEnabled()) {
+                            boolean isGpsEnabled = U.isGpsEnabled(MainActivity.this);
+                            if (isGpsEnabled) {
+                                setTvGpsStatus(true);
                                 startTracking();
                                 tvGpsData.setText(getString(R.string.gpsDataOn));
                                 tvGpsTime.setText(getString(R.string.gpsTimeOn));
@@ -116,12 +116,12 @@ public class MainActivity extends AppCompatActivity {
         accentColor = ContextCompat.getColor(this , R.color.accent);
 
         // 1 = checking if the service has already being running at the start of this activity \
-        if (isMyServiceRunning()) trackingIsOn = true;
+        if (U.isMyServiceRunning(this)) trackingIsOn = true;
         setTrackingSwitchStatus(trackingIsOn);
 
         // 2 = checking the state of internet - only to inform user \
-        isGpsEnabled();
-        isInetEnabled();
+        setTvGpsStatus(U.isGpsEnabled(this));
+        setTvInetStatus(U.isInetEnabled(this));
 
         // 3 = this check is necessary for correct application relaunch \
         updateGpsData(null);
@@ -151,43 +151,6 @@ public class MainActivity extends AppCompatActivity {
 
 // CHECKERS & VIEW STATE SWITCHERS =================================================================
 
-    // crazy simple magic method - it finds my service among others \
-    private boolean isMyServiceRunning() {
-        final ActivityManager activityManager =
-                (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        if (activityManager == null) {
-            MyLog.e("activityManager is null - we must not ever see this");
-            return false;
-        }
-        for (ActivityManager.RunningServiceInfo service :
-                activityManager.getRunningServices(Integer.MAX_VALUE)) { // this may take a while
-            if (MainService.class.getName().equals(service.service.getClassName())) return true;
-        }
-        return false;
-    }
-
-    // totally independent checking \
-    private boolean isGpsEnabled() { // also changes appearance of GPS text view \
-        // checking the state of GPS - inform user and later ask him to enable GPS if needed \
-        final LocationManager locationManager =
-                (LocationManager) getSystemService(LOCATION_SERVICE);
-        boolean isGpsEnabled =
-                locationManager != null && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        setTvGpsStatus(isGpsEnabled);
-        return isGpsEnabled;
-    }
-
-    // totally independent checking \
-    private boolean isInetEnabled() { // also changes appearance of inet info view \
-        final ConnectivityManager connectivityManager =
-                (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = null;
-        if (connectivityManager != null)
-            networkInfo = connectivityManager.getActiveNetworkInfo();
-        boolean isInetEnabled = networkInfo != null && networkInfo.isConnected();
-        setTvInetStatus(isInetEnabled);
-        return isInetEnabled;
-    }
 
     // providing user with info about GPS sensor availability \
     private void setTvGpsStatus(boolean isGpsEnabled) {
@@ -293,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
             tvGpsData.setTextColor(primaryTextColor);
             tvGpsTime.setTextColor(primaryTextColor);
 
-            if (isMyServiceRunning()) {
+            if (U.isMyServiceRunning(this)) {
                 tvGpsData.setText(getString(R.string.gpsDataOn));
                 tvGpsTime.setText(getString(R.string.gpsTimeOn));
             } else {
