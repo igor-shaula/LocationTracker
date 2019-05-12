@@ -24,14 +24,11 @@ import com.igor_shaula.location_tracker.storage.StorageActions;
 import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
-import com.igor_shaula.location_tracker.utilities.U;
 
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
-
-//import com.igor_shaula.location_tracker.storage.realm.MyRealm;
 
 public class MainService extends Service {
 
@@ -97,11 +94,6 @@ public class MainService extends Service {
     public void onDestroy() {
         super.onDestroy();
         // time to clean all resources \
-        locationManager.removeUpdates(pendingIntent);
-        if (U.isAnyPermissionMissed(this)) {
-            MyLog.e("onDestroy ` not all permissions were granted");
-            return;
-        }
         locationManager.removeUpdates(locationListener);
         // which way is better - remove every or all at once \
         mainHandler.removeCallbacks(rStorageTask);
@@ -147,25 +139,17 @@ public class MainService extends Service {
             }
         }; // end of LocationListener-description \\
 
-        // this check is required by IDE - i decided to check both permissions at once \
-        if (U.isAnyPermissionMissed(this)) {
-            // we can only inform user about absent permissions \
-            MyLog.e("gpsTrackingStart ` permissions are not set well");
-            Toast.makeText(MainService.this , getString(R.string.toastPermissionsAreNotGiven) , Toast.LENGTH_SHORT).show();
-
-        } else {
-            // if all permissions are given - time to launch listening to location updates \
-            try {
-                locationManager.requestLocationUpdates(
-                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
-                        MIN_PERIOD_MILLISECONDS ,
-                        MIN_DISTANCE_IN_METERS ,
-                        locationListener);
-                final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
-                MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
-            } catch (SecurityException se) {
-                MyLog.e(se.getLocalizedMessage());
-            }
+        // if all permissions are given - time to launch listening to location updates \
+        try {
+            locationManager.requestLocationUpdates(
+                    LocationManager.GPS_PROVIDER , // for GPS - fine precision
+                    MIN_PERIOD_MILLISECONDS ,
+                    MIN_DISTANCE_IN_METERS ,
+                    locationListener);
+            final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
+            MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+        } catch (SecurityException se) {
+            MyLog.e(se.getLocalizedMessage());
         }
     } // end of gpsTrackingStart-method \\
 
