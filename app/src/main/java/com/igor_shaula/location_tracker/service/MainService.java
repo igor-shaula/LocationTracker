@@ -1,14 +1,17 @@
 package com.igor_shaula.location_tracker.service;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -18,6 +21,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
 
 import com.igor_shaula.location_tracker.R;
@@ -57,7 +61,7 @@ public class MainService extends Service {
     private double dataLatitude, dataLongitude;
     private long dataTime;
     private float dataSpeed, dataAccuracy;
-    private List<LocationPoint> locationPointList;
+    private List <LocationPoint> locationPointList;
 
 // LIFECYCLE =======================================================================================
 
@@ -68,21 +72,21 @@ public class MainService extends Service {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
+    public int onStartCommand(Intent intent , int flags , int startId) {
         MyLog.v("onStartCommand = MainService started");
 
         // now starting service as from zero \
         pendingIntent = intent.getParcelableExtra(GlobalKeys.P_I_KEY);
         // when service is restarted after reboot - intent is empty \
         if (pendingIntent == null)
-            pendingIntent = PendingIntent.getActivity(getApplicationContext(),
-                    GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
+            pendingIntent = PendingIntent.getActivity(getApplicationContext() ,
+                    GlobalKeys.REQUEST_CODE_MAIN_SERVICE , new Intent() , 0);
 
         // it will be used to send messages from inside worker threads and catch them inside UI thread \
         mainHandler = new MyHandler(this);
 
         // all even potentially hard work is kept in other threads \
-        storageThread = new Thread(rStorageTask, STORAGE_THREAD);
+        storageThread = new Thread(rStorageTask , STORAGE_THREAD);
         storageThread.setDaemon(true);
         storageThread.start();
 
@@ -99,10 +103,8 @@ public class MainService extends Service {
         super.onDestroy();
         // time to clean all resources \
         locationManager.removeUpdates(pendingIntent);
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (!isAnyPermissionMissed(this)) {
+            MyLog.e("onDestroy ` not all permissions were granted");
             return;
         }
         locationManager.removeUpdates(locationListener);
@@ -115,6 +117,7 @@ public class MainService extends Service {
 // PREPARING MECHANISM =============================================================================
 
     // launched from onStartCommand \
+    @SuppressLint("MissingPermission")
     private void gpsTrackingStart() {
 
         // this is the global data source of all location information \
@@ -126,17 +129,17 @@ public class MainService extends Service {
             @Override
             public void onProviderDisabled(String provider) {
                 MyLog.i("onProviderDisabled: " + provider);
-                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderOff), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOff) , Toast.LENGTH_SHORT).show();
             }
 
             @Override
             public void onProviderEnabled(String provider) {
                 MyLog.i("onProviderEnabled: " + provider);
-                Toast.makeText(MainService.this, getString(R.string.toastGpsProviderOn), Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOn) , Toast.LENGTH_SHORT).show();
             }
 
             @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) {
+            public void onStatusChanged(String provider , int status , Bundle extras) {
                 MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
                 MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
             }
@@ -150,40 +153,24 @@ public class MainService extends Service {
         }; // end of LocationListener-description \\
 
         // this check is required by IDE - i decided to check both permissions at once \
-        if (ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
-                    && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (!isAnyPermissionMissed(this)) {
             // we can only inform user about absent permissions \
-            MyLog.e("permissions are not set well");
-            Toast.makeText(MainService.this, getString(R.string.toastPermissionsAreNotGiven), Toast.LENGTH_SHORT).show();
+            MyLog.e("gpsTrackingStart ` permissions are not set well");
+            Toast.makeText(MainService.this , getString(R.string.toastPermissionsAreNotGiven) , Toast.LENGTH_SHORT).show();
 
         } else {
             // if all permissions are given - time to launch listening to location updates \
-/*
-         // the most common way - to listen to every adapter - but this causes triple updates \
-         String[] providers = {
-                  LocationManager.PASSIVE_PROVIDER, // to save battery - unknown accuracy
-                  LocationManager.NETWORK_PROVIDER, // cell and wifi - coarse
-                  LocationManager.GPS_PROVIDER // for GPS - fine
-         };
-         for (String provider : providers) {
-            locationManager.requestLocationUpdates(
-                     provider,
-                     MIN_PERIOD_MILLISECONDS,
-                     MIN_DISTANCE_IN_METERS,
-                     locationListener);
-            LocationProvider locationProvider = locationManager.getProvider(provider);
-            MyLog.i("accuracy of " + provider + " = " + locationProvider.getAccuracy());
-         }
-*/
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER, // for GPS - fine precision
-                    MIN_PERIOD_MILLISECONDS,
-                    MIN_DISTANCE_IN_METERS,
-                    locationListener);
-            final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
-            MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+            try {
+                locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
+                        MIN_PERIOD_MILLISECONDS ,
+                        MIN_DISTANCE_IN_METERS ,
+                        locationListener);
+                final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
+                MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+            } catch (SecurityException se) {
+                MyLog.e(se.getLocalizedMessage());
+            }
         }
     } // end of gpsTrackingStart-method \\
 
@@ -229,12 +216,11 @@ public class MainService extends Service {
                         distance[0] = (int) getTotalDistance(locationPointList);
                         // preparing and sending data to MainActivity to update its UI \
                         final Intent intentToReturn = new Intent()
-                                                              .putExtra(GlobalKeys.GPS_LATITUDE, dataLatitude)
-                                                              .putExtra(GlobalKeys.GPS_LONGITUDE, dataLongitude)
-                                                              .putExtra(GlobalKeys.GPS_TAKING_TIME, dataTime)
-                                                              .putExtra(GlobalKeys.DISTANCE, distance[0]);
-                        sendIntentToActivity(intentToReturn, GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
-
+                                .putExtra(GlobalKeys.GPS_LATITUDE , dataLatitude)
+                                .putExtra(GlobalKeys.GPS_LONGITUDE , dataLongitude)
+                                .putExtra(GlobalKeys.GPS_TAKING_TIME , dataTime)
+                                .putExtra(GlobalKeys.DISTANCE , distance[0]);
+                        sendIntentToActivity(intentToReturn , GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
                         return true;
                 } // end of switch-statement \\
                 return false;
@@ -244,17 +230,38 @@ public class MainService extends Service {
 
 // UTILS ===========================================================================================
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    private boolean isAnyPermissionMissed(@NonNull Context context) {
+        return troubleWithPermission(context ,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                || troubleWithPermission(context ,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+    }
+
+    private boolean troubleWithPermission(@NonNull Context context ,
+                                          @NonNull String permission) {
+        return ActivityCompat.checkSelfPermission(context , permission)
+                != PackageManager.PERMISSION_GRANTED;
+    }
+
+    @SuppressWarnings("unused")
+    @RequiresApi(api = Build.VERSION_CODES.M)
+    private boolean TroubleWithPermission23plus(@NonNull String permission) {
+        return checkSelfPermission(permission)
+                != PackageManager.PERMISSION_GRANTED;
+    }
+
     // universal point to send info to MainActivity \
-    private void sendIntentToActivity(@NonNull Intent intent, int code) {
+    private void sendIntentToActivity(@NonNull Intent intent , int code) {
         try {
-            pendingIntent.send(this, code, intent);
+            pendingIntent.send(this , code , intent);
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
     }
 
     // returns believable value of total passed distance \
-    private float getTotalDistance(List<LocationPoint> locationPointList) {
+    private float getTotalDistance(List <LocationPoint> locationPointList) {
         int capacity = locationPointList.size();
         MyLog.i("capacity = " + capacity);
 
@@ -265,7 +272,7 @@ public class MainService extends Service {
         float totalDistanceInMeters = 0;
 
         // getting all data and receiving numbers at every step \
-        for (int i = 0; i < capacity; i++) {
+        for (int i = 0 ; i < capacity ; i++) {
             // all works only if there are more than one point at all \
             if (locationPointList.iterator().hasNext()) {
                 // this iterator is not from Collcetions framework - it's from Realm \
@@ -301,7 +308,7 @@ public class MainService extends Service {
                     if (startPoint.getSpeed() > 1) { // meters per second
 
                         // result of calculations is stored inside the resultArray \
-                        Location.distanceBetween(startLat, startLong, endLat, endLong, resultArray);
+                        Location.distanceBetween(startLat , startLong , endLat , endLong , resultArray);
                         MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
 
                         // quick decision to cut off location noise and count only car movement \
@@ -352,7 +359,7 @@ public class MainService extends Service {
                 // saving new point \
                 case STORAGE_SAVE_NEW:
                     // taking arguments in such way looks like a crutch - but it's needed \
-                    storageActions.write(new LocationPoint(dataLatitude, dataLongitude, dataTime, dataSpeed, dataAccuracy));
+                    storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy));
                     mainHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
                     break;
                 // reading all \
@@ -367,10 +374,10 @@ public class MainService extends Service {
     // created to avoid memory leaks if class not static when using default Handler-class \
     private static class MyHandler extends Handler {
 
-        WeakReference<MainService> weakReference;
+        WeakReference <MainService> weakReference;
 
         private MyHandler(MainService mainService) {
-            weakReference = new WeakReference<>(mainService);
+            weakReference = new WeakReference <>(mainService);
         }
 
         @Override
@@ -396,7 +403,7 @@ public class MainService extends Service {
                     break;
             }
             // what is need to be updated in UI thread - is here \
-            Toast.makeText(mainService, "handleMessage: " + whatMeaning, Toast.LENGTH_SHORT).show();
+            Toast.makeText(mainService , "handleMessage: " + whatMeaning , Toast.LENGTH_SHORT).show();
             MyLog.i("handleMessage: " + whatMeaning);
         }
     } // end of MyHandler-inner-class \\

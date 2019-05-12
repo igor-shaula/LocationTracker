@@ -11,11 +11,13 @@ import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.provider.Settings;
+import android.util.Log;
 import android.widget.CompoundButton;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -34,6 +36,8 @@ import org.greenrobot.eventbus.Subscribe;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
+
+    public static final String CN = "MainActivity";
 
     private Switch sTrackingStatus;
     private TextView tvGpsStatus;
@@ -57,11 +61,11 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         // registering a receiver for GPS state updates - it's needed only in this activtity \
-        getApplicationContext().registerReceiver(new GpsStateReceiver(),
+        getApplicationContext().registerReceiver(new GpsStateReceiver() ,
                 new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
 
         // registering a receiver for inet state updates - needed only when this activity lives \
-        getApplicationContext().registerReceiver(new InetStateReceiver(),
+        getApplicationContext().registerReceiver(new InetStateReceiver() ,
                 new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
         setContentView(R.layout.activity_main);
@@ -73,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                 new CompoundButton.OnCheckedChangeListener() {
 
                     @Override
-                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    public void onCheckedChanged(CompoundButton buttonView , boolean isChecked) {
                         // getting some touch feedback about start/stop action \
                         if (isChecked) {
                             if (isGpsEnabled()) {
@@ -103,10 +107,10 @@ public class MainActivity extends AppCompatActivity {
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
 
         // 0 = beautiful technique to get colors values in non-deprecated way \
-        whiteColor = ContextCompat.getColor(this, android.R.color.white);
-        primaryDarkColor = ContextCompat.getColor(this, R.color.primary_dark);
-        primaryTextColor = ContextCompat.getColor(this, R.color.primary_text);
-        accentColor = ContextCompat.getColor(this, R.color.accent);
+        whiteColor = ContextCompat.getColor(this , android.R.color.white);
+        primaryDarkColor = ContextCompat.getColor(this , R.color.primary_dark);
+        primaryTextColor = ContextCompat.getColor(this , R.color.primary_text);
+        accentColor = ContextCompat.getColor(this , R.color.accent);
 
         // 1 = checking if the service has already being running at the start of this activity \
         if (isMyServiceRunning()) trackingIsOn = true;
@@ -216,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
 // MAIN SET OF METHODS =============================================================================
 
     private void showSystemScreenForGps() {
-        Toast.makeText(MainActivity.this, getString(R.string.toastSwitchGpsOn), Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this , getString(R.string.toastSwitchGpsOn) , Toast.LENGTH_SHORT).show();
         // opening window with system settings for GPS \
         startActivity(new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS));
     }
@@ -224,9 +228,9 @@ public class MainActivity extends AppCompatActivity {
     private void startTracking() {
         // preparing intent for qr-code sending service \
         final PendingIntent pendingIntent =
-                createPendingResult(GlobalKeys.REQUEST_CODE_MAIN_SERVICE, new Intent(), 0);
-        final Intent intentServiceGps = new Intent(this, MainService.class);
-        intentServiceGps.putExtra(GlobalKeys.P_I_KEY, pendingIntent);
+                createPendingResult(GlobalKeys.REQUEST_CODE_MAIN_SERVICE , new Intent() , 0);
+        final Intent intentServiceGps = new Intent(this , MainService.class);
+        intentServiceGps.putExtra(GlobalKeys.P_I_KEY , pendingIntent);
 
         startService(intentServiceGps);
         setTrackingSwitchStatus(true);
@@ -234,14 +238,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void stopTracking() {
         // here we have to switch service off completely \
-        stopService(new Intent(this, MainService.class));
+        stopService(new Intent(this , MainService.class));
         setTrackingSwitchStatus(false);
     }
 
     // returning point to this activity \
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
+    protected void onActivityResult(int requestCode , int resultCode , Intent data) {
+        super.onActivityResult(requestCode , resultCode , data);
 
         if (requestCode == GlobalKeys.REQUEST_CODE_MAIN_SERVICE) {
             if (resultCode == GlobalKeys.P_I_CODE_DATA_FROM_GPS) {
@@ -256,19 +260,19 @@ public class MainActivity extends AppCompatActivity {
         if (data != null) {
 
             // preparing fields for location arguments \
-            double latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE, 0.0);
-            double longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE, 0.0);
+            double latitude = data.getDoubleExtra(GlobalKeys.GPS_LATITUDE , 0.0);
+            double longitude = data.getDoubleExtra(GlobalKeys.GPS_LONGITUDE , 0.0);
             final String coordinates = "Lat. " + latitude + " / Long. " + longitude;
             tvGpsData.setText(coordinates);
 
             // preparing field for time data \
-            long timeOfTakingCoordinates = data.getLongExtra(GlobalKeys.GPS_TAKING_TIME, 0);
+            long timeOfTakingCoordinates = data.getLongExtra(GlobalKeys.GPS_TAKING_TIME , 0);
             final Calendar calendar = Calendar.getInstance();
             calendar.setTimeInMillis(timeOfTakingCoordinates);
             final String stringTime = "Time: " + calendar.getTime().toString();
             tvGpsTime.setText(stringTime);
 
-            int distance = data.getIntExtra(GlobalKeys.DISTANCE, 0);
+            int distance = data.getIntExtra(GlobalKeys.DISTANCE , 0);
             final String distanceText = "Passed distance: " + distance + " m";
             tvDistance.setText(distanceText);
 
@@ -289,7 +293,14 @@ public class MainActivity extends AppCompatActivity {
         }
     } // end of updateGpsData-method \\
 
-// EVENTBUS ========================================================================================
+    @Override
+    public void onRequestPermissionsResult(int requestCode , @NonNull String[] permissions , @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode , permissions , grantResults);
+        Log.d(CN , "onRequestPermissionsResult: requestCode: " + requestCode);
+        Log.d(CN , "onRequestPermissionsResult: grantResults[0]: " + grantResults[0]);
+    }
+
+    // EVENTBUS ====================================================================================
 
     @SuppressWarnings("unused")
     @Subscribe
