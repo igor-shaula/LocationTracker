@@ -1,17 +1,13 @@
 package com.igor_shaula.location_tracker.service;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -21,8 +17,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
 
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
@@ -30,6 +24,7 @@ import com.igor_shaula.location_tracker.storage.StorageActions;
 import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
+import com.igor_shaula.location_tracker.utilities.U;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -103,7 +98,7 @@ public class MainService extends Service {
         super.onDestroy();
         // time to clean all resources \
         locationManager.removeUpdates(pendingIntent);
-        if (!isAnyPermissionMissed(this)) {
+        if (U.isAnyPermissionMissed(this)) {
             MyLog.e("onDestroy ` not all permissions were granted");
             return;
         }
@@ -153,7 +148,7 @@ public class MainService extends Service {
         }; // end of LocationListener-description \\
 
         // this check is required by IDE - i decided to check both permissions at once \
-        if (!isAnyPermissionMissed(this)) {
+        if (U.isAnyPermissionMissed(this)) {
             // we can only inform user about absent permissions \
             MyLog.e("gpsTrackingStart ` permissions are not set well");
             Toast.makeText(MainService.this , getString(R.string.toastPermissionsAreNotGiven) , Toast.LENGTH_SHORT).show();
@@ -229,27 +224,6 @@ public class MainService extends Service {
     } // end of processLocationUpdate-method \\
 
 // UTILS ===========================================================================================
-
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean isAnyPermissionMissed(@NonNull Context context) {
-        return troubleWithPermission(context ,
-                Manifest.permission.ACCESS_COARSE_LOCATION)
-                || troubleWithPermission(context ,
-                Manifest.permission.ACCESS_FINE_LOCATION);
-    }
-
-    private boolean troubleWithPermission(@NonNull Context context ,
-                                          @NonNull String permission) {
-        return ActivityCompat.checkSelfPermission(context , permission)
-                != PackageManager.PERMISSION_GRANTED;
-    }
-
-    @SuppressWarnings("unused")
-    @RequiresApi(api = Build.VERSION_CODES.M)
-    private boolean TroubleWithPermission23plus(@NonNull String permission) {
-        return checkSelfPermission(permission)
-                != PackageManager.PERMISSION_GRANTED;
-    }
 
     // universal point to send info to MainActivity \
     private void sendIntentToActivity(@NonNull Intent intent , int code) {

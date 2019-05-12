@@ -1,5 +1,6 @@
 package com.igor_shaula.location_tracker.activity;
 
+import android.Manifest;
 import android.app.ActivityManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -8,6 +9,7 @@ import android.content.IntentFilter;
 import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.provider.Settings;
@@ -29,6 +31,7 @@ import com.igor_shaula.location_tracker.receivers.InetStateReceiver;
 import com.igor_shaula.location_tracker.service.MainService;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
+import com.igor_shaula.location_tracker.utilities.U;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -122,6 +125,13 @@ public class MainActivity extends AppCompatActivity {
 
         // 3 = this check is necessary for correct application relaunch \
         updateGpsData(null);
+
+        if (U.isAnyPermissionMissed(this)) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            final String[] permissions = new String[2];
+            permissions[0] = Manifest.permission.ACCESS_COARSE_LOCATION;
+            permissions[1] = Manifest.permission.ACCESS_FINE_LOCATION;
+            requestPermissions(permissions , 123);
+        } // answer is awaited in onRequestPermissionsResult(..)
 
     } // end of onCreate-method \
 
