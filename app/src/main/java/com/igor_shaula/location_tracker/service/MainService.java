@@ -30,14 +30,10 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.ref.WeakReference;
 import java.util.List;
 
+// TODO: 14.05.2019 describe the purpose of this service existence
 public class MainService extends Service {
 
-    private final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
-    private final static float MIN_DISTANCE_IN_METERS = 1;
-    private static final String STORAGE_THREAD = "my storage thread";
-    private static final int STORAGE_INIT_CLEAR = 0;
-    private static final int STORAGE_SAVE_NEW = 1;
-    private static final int STORAGE_READ_ALL = 2;
+    private static final String STORAGE_THREAD = "my-storage-thread";
 
     @Nullable
     private PendingIntent pendingIntent;
@@ -49,34 +45,73 @@ public class MainService extends Service {
     private LocationListener locationListener = new LocationListener() {
 
         @Override
-        public void onProviderDisabled(String provider) {
+        public void onProviderDisabled(@Nullable String provider) {
             MyLog.i("onProviderDisabled: " + provider);
             Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOff) , Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        public void onProviderEnabled(String provider) {
+        public void onProviderEnabled(@Nullable String provider) {
             MyLog.i("onProviderEnabled: " + provider);
             Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOn) , Toast.LENGTH_SHORT).show();
         }
 
         @Override
-        public void onStatusChanged(String provider , int status , Bundle extras) {
+        public void onStatusChanged(@Nullable String provider , int status , @Nullable Bundle extras) {
             MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
-            MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
+            if (extras != null) {
+                MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
+            }
         }
 
         @Override
-        public void onLocationChanged(Location newLocation) {
+        public void onLocationChanged(@Nullable Location newLocation) {
             MyLog.i("onLocationChanged = started");
             // the only place where all interesting operations are done \
-            processLocationUpdate(newLocation);
+            if (newLocation != null) {
+                processLocationUpdate(newLocation);
+            }
         }
     }; // end of LocationListener-description \\
 
-    private StorageActions storageActions;
-    private Handler mainHandler;
-    private Thread storageThread;
+    @NonNull
+    private StorageActions storageActions = InMemory.getSingleton();
+    @NonNull
+    private Handler mainHandler = new MyHandler(this);
+    @NonNull
+    private Runnable rStorageTask = new Runnable() {
+        @Override
+        public void run() {
+            // avoiding potential concurrency for resources with main thread \
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
+
+            switch (runnableState) {
+                // thread works this way by default but only once from the start of the service \
+                case InMemory.STORAGE_INIT_CLEAR:
+                    // create instance of abstract storage - choose realization only here \
+//                    storageActions = MyRealm.getSingleton(MainService.this);
+//                    storageActions = InMemory.getSingleton();
+                    storageActions.clearAll();
+                    mainHandler.sendEmptyMessage(InMemory.STORAGE_INIT_CLEAR);
+                    break;
+                // saving new point \
+                case InMemory.STORAGE_SAVE_NEW:
+                    // taking arguments in such way looks like a crutch - but it's needed \
+                    if (storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy)))
+                        mainHandler.sendEmptyMessage(InMemory.STORAGE_SAVE_NEW);
+                    else MyLog.e("writing to storage failed - that should not ever happen");
+                    break;
+                // reading all \
+                case InMemory.STORAGE_READ_ALL:
+                    locationPointList = storageActions.readAll();
+                    mainHandler.sendEmptyMessage(InMemory.STORAGE_READ_ALL);
+                    break;
+            } // end of switch-statement \\
+        } // end of run-method \\
+    };
+    @NonNull
+    private Thread storageThread = new Thread(rStorageTask , STORAGE_THREAD);
+
     private int runnableState;
 
     // service ought not keep data in self - so these variables are crutches for multithreading usage \
@@ -105,10 +140,10 @@ public class MainService extends Service {
                     GlobalKeys.REQUEST_CODE_MAIN_SERVICE , new Intent() , 0);
 
         // it will be used to send messages from inside worker threads and catch them inside UI thread \
-        mainHandler = new MyHandler(this);
+//        mainHandler = new MyHandler(this);
 
         // all even potentially hard work is kept in other threads \
-        storageThread = new Thread(rStorageTask , STORAGE_THREAD);
+//        storageThread = new Thread(rStorageTask , STORAGE_THREAD);
         storageThread.setDaemon(true);
         storageThread.start();
 
@@ -127,10 +162,11 @@ public class MainService extends Service {
         if (locationManager != null) {
             locationManager.removeUpdates(locationListener);
         }
+//        if (mainHandler != null) {
         // which way is better - remove every or all at once \
         mainHandler.removeCallbacks(rStorageTask);
-        if (mainHandler != null)
-            mainHandler.removeCallbacksAndMessages(null);
+        mainHandler.removeCallbacksAndMessages(null);
+//        }
     }
 
 // PREPARING MECHANISM =============================================================================
@@ -146,10 +182,10 @@ public class MainService extends Service {
 //        Looper.getMainLooper().
         try {
             if (locationManager != null) {
-                locationManager.requestLocationUpdates(
+                locationManager.requestLocationUpdates( // TODO: 14.05.2019 RuntimeException here !!!
                         LocationManager.GPS_PROVIDER , // for GPS - fine precision
-                        MIN_PERIOD_MILLISECONDS ,
-                        MIN_DISTANCE_IN_METERS ,
+                        GlobalKeys.MIN_PERIOD_MILLISECONDS ,
+                        GlobalKeys.MIN_DISTANCE_IN_METERS ,
                         locationListener);
 
                 final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
@@ -193,14 +229,14 @@ public class MainService extends Service {
             public boolean handleMessage(@NotNull Message msg) {
                 switch (msg.what) {
                     // i have to launch reading data thread only when writing new point is done \
-                    case STORAGE_SAVE_NEW:
+                    case InMemory.STORAGE_SAVE_NEW:
                         MyLog.i("handleMessage: saving thread finished - can begin reading");
                         // now it is possible to safely read all data from the storage \
                         runnableState = 2;
                         storageThread.start();
                         return true;
                     // begin calculations only when reading thread is completed \
-                    case STORAGE_READ_ALL:
+                    case InMemory.STORAGE_READ_ALL:
                         // the next step has to be busy with saving new point of data \
                         runnableState = 1;
                         MyLog.i("handleMessage: reading thread finished - can begin calculations");
@@ -211,7 +247,7 @@ public class MainService extends Service {
                                 .putExtra(GlobalKeys.GPS_LONGITUDE , dataLongitude)
                                 .putExtra(GlobalKeys.GPS_TAKING_TIME , dataTime)
                                 .putExtra(GlobalKeys.DISTANCE , distance[0]);
-                        sendIntentToActivity(intentToReturn , GlobalKeys.P_I_CODE_DATA_FROM_GPS); // 100
+                        sendIntentToActivity(intentToReturn); // 100
                         return true;
                 } // end of switch-statement \\
                 return false;
@@ -222,9 +258,11 @@ public class MainService extends Service {
 // UTILS ===========================================================================================
 
     // universal point to send info to MainActivity \
-    private void sendIntentToActivity(@NonNull Intent intent , int code) {
+    private void sendIntentToActivity(@NonNull Intent intent) {
         try {
-            pendingIntent.send(this , code , intent);
+            if (pendingIntent != null) {
+                pendingIntent.send(this , GlobalKeys.P_I_CODE_DATA_FROM_GPS , intent);
+            }
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
@@ -245,7 +283,7 @@ public class MainService extends Service {
         for (int i = 0 ; i < capacity ; i++) {
             // all works only if there are more than one point at all \
             if (locationPointList.iterator().hasNext()) {
-                // this iterator is not from Collcetions framework - it's from Realm \
+                // this iterator is not from Collections framework - it's from Realm \
                 MyLog.i("hasNext & i = " + i);
 
                 // this is the simplest way to react on time negative difference \
@@ -282,7 +320,7 @@ public class MainService extends Service {
                         MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
 
                         // quick decision to cut off location noise and count only car movement \
-                        if (resultArray[0] > MIN_DISTANCE_IN_METERS) {
+                        if (resultArray[0] > GlobalKeys.MIN_DISTANCE_IN_METERS) {
                             /*
                              * i usually receive data with much higher values than it should be \
                              * so it's obvious that i have to make those strange values some lower \
@@ -311,37 +349,6 @@ public class MainService extends Service {
 
 // MULTITHREADING ==================================================================================
 
-    private Runnable rStorageTask = new Runnable() {
-        @Override
-        public void run() {
-            // avoiding potential concurrency for resources with main thread \
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-
-            switch (runnableState) {
-                // thread works this way by default but only once from the start of the service \
-                case STORAGE_INIT_CLEAR:
-                    // create instance of abstract storage - choose realization only here \
-//                    storageActions = MyRealm.getSingleton(MainService.this);
-                    storageActions = InMemory.getSingleton();
-                    storageActions.clearAll();
-                    mainHandler.sendEmptyMessage(STORAGE_INIT_CLEAR);
-                    break;
-                // saving new point \
-                case STORAGE_SAVE_NEW:
-                    // taking arguments in such way looks like a crutch - but it's needed \
-                    if (storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy)))
-                        mainHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
-                    else MyLog.e("writing to storage failed - that should not ever happen");
-                    break;
-                // reading all \
-                case STORAGE_READ_ALL:
-                    locationPointList = storageActions.readAll();
-                    mainHandler.sendEmptyMessage(STORAGE_READ_ALL);
-                    break;
-            } // end of switch-statement \\
-        } // end of run-method \\
-    };
-
     // created to avoid memory leaks if class not static when using default Handler-class \
     private static class MyHandler extends Handler {
 
@@ -364,13 +371,13 @@ public class MainService extends Service {
 
             String whatMeaning = "";
             switch (msg.what) {
-                case STORAGE_INIT_CLEAR:
+                case InMemory.STORAGE_INIT_CLEAR:
                     whatMeaning = "storage is prepared and cleaned";
                     break;
-                case STORAGE_SAVE_NEW:
+                case InMemory.STORAGE_SAVE_NEW:
                     whatMeaning = "new data is written to the storage";
                     break;
-                case STORAGE_READ_ALL:
+                case InMemory.STORAGE_READ_ALL:
                     whatMeaning = "all data is read from the storage";
                     break;
             }

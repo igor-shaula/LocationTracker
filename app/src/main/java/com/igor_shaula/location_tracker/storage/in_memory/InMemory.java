@@ -17,6 +17,10 @@ import java.util.List;
  */
 public class InMemory implements StorageActions { // typical thread-safe singleton
 
+    public static final int STORAGE_INIT_CLEAR = 0;
+    public static final int STORAGE_SAVE_NEW = 1;
+    public static final int STORAGE_READ_ALL = 2;
+
     @NonNull
     private List <LocationPoint> locationPointList;
 

@@ -19,4 +19,7 @@ public class GlobalKeys {
     public static final String EVENT_INET_OFF = "internet disabled";
     public static final String EVENT_GPS_ON = "GPS enabled";
     public static final String EVENT_GPS_OFF = "GPS disabled";
+
+    public final static long MIN_PERIOD_MILLISECONDS = 10 * 1000;
+    public final static float MIN_DISTANCE_IN_METERS = 1;
 }
