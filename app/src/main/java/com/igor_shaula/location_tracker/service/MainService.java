@@ -1,14 +1,9 @@
 package com.igor_shaula.location_tracker.service;
 
-import android.annotation.SuppressLint;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.location.LocationProvider;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -18,7 +13,6 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
 import com.igor_shaula.location_tracker.storage.StorageActions;
 import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
@@ -33,46 +27,12 @@ import java.util.List;
 // TODO: 14.05.2019 describe the purpose of this service existence
 public class MainService extends Service {
 
+    // TODO: 14.05.2019 this class should have NO dependencies from android.location package
+
     private static final String STORAGE_THREAD = "my-storage-thread";
 
     @Nullable
     private PendingIntent pendingIntent;
-
-    @Nullable
-    private LocationManager locationManager;
-
-    @NonNull
-    private LocationListener locationListener = new LocationListener() {
-
-        @Override
-        public void onProviderDisabled(@Nullable String provider) {
-            MyLog.i("onProviderDisabled: " + provider);
-            Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOff) , Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onProviderEnabled(@Nullable String provider) {
-            MyLog.i("onProviderEnabled: " + provider);
-            Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOn) , Toast.LENGTH_SHORT).show();
-        }
-
-        @Override
-        public void onStatusChanged(@Nullable String provider , int status , @Nullable Bundle extras) {
-            MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
-            if (extras != null) {
-                MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
-            }
-        }
-
-        @Override
-        public void onLocationChanged(@Nullable Location newLocation) {
-            MyLog.i("onLocationChanged = started");
-            // the only place where all interesting operations are done \
-            if (newLocation != null) {
-                processLocationUpdate(newLocation);
-            }
-        }
-    }; // end of LocationListener-description \\
 
     @NonNull
     private StorageActions storageActions = InMemory.getSingleton();
@@ -97,13 +57,14 @@ public class MainService extends Service {
                 // saving new point \
                 case InMemory.STORAGE_SAVE_NEW:
                     // taking arguments in such way looks like a crutch - but it's needed \
-                    if (storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy)))
+                    final LocationPoint currentLocationPoint = locationConnector.getCurrentLocationPoint();
+                    if (storageActions.write(currentLocationPoint))
                         mainHandler.sendEmptyMessage(InMemory.STORAGE_SAVE_NEW);
                     else MyLog.e("writing to storage failed - that should not ever happen");
                     break;
                 // reading all \
                 case InMemory.STORAGE_READ_ALL:
-                    locationPointList = storageActions.readAll();
+//                    locationPointList = storageActions.readAll();
                     mainHandler.sendEmptyMessage(InMemory.STORAGE_READ_ALL);
                     break;
             } // end of switch-statement \\
@@ -114,11 +75,11 @@ public class MainService extends Service {
 
     private int runnableState;
 
-    // service ought not keep data in self - so these variables are crutches for multithreading usage \
-    private double dataLatitude, dataLongitude;
-    private long dataTime;
-    private float dataSpeed, dataAccuracy;
-    private List <LocationPoint> locationPointList;
+    @NonNull
+    private LocationConnector locationConnector = new LocationConnector(this);
+
+    @NonNull
+    private List <LocationPoint> locationPointList = storageActions.readAll();
 
 // LIFECYCLE =======================================================================================
 
@@ -148,7 +109,7 @@ public class MainService extends Service {
         storageThread.start();
 
         // finally launching main sequence to get the location data \
-        gpsTrackingStart();
+        locationConnector.gpsTrackingStart();
 
         return Service.START_REDELIVER_INTENT;
 
@@ -159,9 +120,7 @@ public class MainService extends Service {
     public void onDestroy() {
         super.onDestroy();
         // time to clean all resources \
-        if (locationManager != null) {
-            locationManager.removeUpdates(locationListener);
-        }
+        locationConnector.clearAllResources();
 //        if (mainHandler != null) {
         // which way is better - remove every or all at once \
         mainHandler.removeCallbacks(rStorageTask);
@@ -169,54 +128,10 @@ public class MainService extends Service {
 //        }
     }
 
-// PREPARING MECHANISM =============================================================================
-
-    // launched from onStartCommand \
-    @SuppressLint("MissingPermission")
-    private void gpsTrackingStart() {
-
-        // this is the global data source of all location information \
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        // if all permissions are given - time to launch listening to location updates \
-//        Looper.getMainLooper().
-        try {
-            if (locationManager != null) {
-                locationManager.requestLocationUpdates( // TODO: 14.05.2019 RuntimeException here !!!
-                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
-                        GlobalKeys.MIN_PERIOD_MILLISECONDS ,
-                        GlobalKeys.MIN_DISTANCE_IN_METERS ,
-                        locationListener);
-
-                final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
-                if (locationProvider != null) {
-                    MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
-                }
-            } else {
-                MyLog.e("");
-            }
-        } catch (SecurityException se) {
-            MyLog.e(se.getLocalizedMessage());
-        }
-        // TODO: 13.05.2019 handle RuntimeException which is about multithreading here
-    } // end of gpsTrackingStart-method \\
-
 // ACTIONS FROM LISTENER ===========================================================================
 
     // this method is called only from inside location listener - works in main thread \
-    private void processLocationUpdate(@NonNull Location location) {
-        // only one (current) location point - for only one line of network requests \
-
-        MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
-
-        // extracting needed fields - we cannot take the whole object because of Realm restrictions \
-        dataLatitude = location.getLatitude();
-        dataLongitude = location.getLongitude();
-        dataTime = location.getTime();
-        if (location.hasSpeed()) dataSpeed = location.getSpeed();
-        else dataSpeed = 0; // explicitly clearing value from previous possible point \
-        if (location.hasAccuracy()) dataAccuracy = location.getAccuracy();
-        else dataAccuracy = 0; // explicitly clearing value from previous possible point \
+    public void processLocationUpdate(@NonNull final LocationPoint locationPoint) {
 
         // the only place of saving current point into database \
         runnableState = 1;
@@ -243,9 +158,9 @@ public class MainService extends Service {
                         distance[0] = (int) getTotalDistance(locationPointList);
                         // preparing and sending data to MainActivity to update its UI \
                         final Intent intentToReturn = new Intent()
-                                .putExtra(GlobalKeys.GPS_LATITUDE , dataLatitude)
-                                .putExtra(GlobalKeys.GPS_LONGITUDE , dataLongitude)
-                                .putExtra(GlobalKeys.GPS_TAKING_TIME , dataTime)
+                                .putExtra(GlobalKeys.GPS_LATITUDE , locationPoint.getLatitude())
+                                .putExtra(GlobalKeys.GPS_LONGITUDE , locationPoint.getLongitude())
+                                .putExtra(GlobalKeys.GPS_TAKING_TIME , locationPoint.getTime())
                                 .putExtra(GlobalKeys.DISTANCE , distance[0]);
                         sendIntentToActivity(intentToReturn); // 100
                         return true;
