@@ -39,10 +39,40 @@ public class MainService extends Service {
     private static final int STORAGE_SAVE_NEW = 1;
     private static final int STORAGE_READ_ALL = 2;
 
+    @Nullable
     private PendingIntent pendingIntent;
 
+    @Nullable
     private LocationManager locationManager;
-    private LocationListener locationListener;
+
+    @NonNull
+    private LocationListener locationListener = new LocationListener() {
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            MyLog.i("onProviderDisabled: " + provider);
+            Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOff) , Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+            MyLog.i("onProviderEnabled: " + provider);
+            Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOn) , Toast.LENGTH_SHORT).show();
+        }
+
+        @Override
+        public void onStatusChanged(String provider , int status , Bundle extras) {
+            MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
+            MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
+        }
+
+        @Override
+        public void onLocationChanged(Location newLocation) {
+            MyLog.i("onLocationChanged = started");
+            // the only place where all interesting operations are done \
+            processLocationUpdate(newLocation);
+        }
+    }; // end of LocationListener-description \\
 
     private StorageActions storageActions;
     private Handler mainHandler;
@@ -94,7 +124,9 @@ public class MainService extends Service {
     public void onDestroy() {
         super.onDestroy();
         // time to clean all resources \
-        locationManager.removeUpdates(locationListener);
+        if (locationManager != null) {
+            locationManager.removeUpdates(locationListener);
+        }
         // which way is better - remove every or all at once \
         mainHandler.removeCallbacks(rStorageTask);
         if (mainHandler != null)
@@ -110,53 +142,33 @@ public class MainService extends Service {
         // this is the global data source of all location information \
         locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-        // for now all actions are launched from inside this listener \
-        locationListener = new LocationListener() {
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                MyLog.i("onProviderDisabled: " + provider);
-                Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOff) , Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onProviderEnabled(String provider) {
-                MyLog.i("onProviderEnabled: " + provider);
-                Toast.makeText(MainService.this , getString(R.string.toastGpsProviderOn) , Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onStatusChanged(String provider , int status , Bundle extras) {
-                MyLog.i("onStatusChanged: provider: " + provider + " & status = " + status);
-                MyLog.i("onStatusChanged: extras: " + extras.getString("satellites"));
-            }
-
-            @Override
-            public void onLocationChanged(Location newLocation) {
-                MyLog.i("onLocationChanged = started");
-                // the only place where all interesting operations are done \
-                processLocationUpdate(newLocation);
-            }
-        }; // end of LocationListener-description \\
-
         // if all permissions are given - time to launch listening to location updates \
+//        Looper.getMainLooper().
         try {
-            locationManager.requestLocationUpdates(
-                    LocationManager.GPS_PROVIDER , // for GPS - fine precision
-                    MIN_PERIOD_MILLISECONDS ,
-                    MIN_DISTANCE_IN_METERS ,
-                    locationListener);
-            final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
-            MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+            if (locationManager != null) {
+                locationManager.requestLocationUpdates(
+                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
+                        MIN_PERIOD_MILLISECONDS ,
+                        MIN_DISTANCE_IN_METERS ,
+                        locationListener);
+
+                final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
+                if (locationProvider != null) {
+                    MyLog.i("accuracy of GPS_PROVIDER = " + locationProvider.getAccuracy());
+                }
+            } else {
+                MyLog.e("");
+            }
         } catch (SecurityException se) {
             MyLog.e(se.getLocalizedMessage());
         }
+        // TODO: 13.05.2019 handle RuntimeException which is about multithreading here
     } // end of gpsTrackingStart-method \\
 
 // ACTIONS FROM LISTENER ===========================================================================
 
     // this method is called only from inside location listener - works in main thread \
-    private void processLocationUpdate(Location location) {
+    private void processLocationUpdate(@NonNull Location location) {
         // only one (current) location point - for only one line of network requests \
 
         MyLog.i("provider = " + location.getProvider() + " - location accuracy = " + location.getAccuracy());
@@ -317,8 +329,9 @@ public class MainService extends Service {
                 // saving new point \
                 case STORAGE_SAVE_NEW:
                     // taking arguments in such way looks like a crutch - but it's needed \
-                    storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy));
-                    mainHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
+                    if (storageActions.write(new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy)))
+                        mainHandler.sendEmptyMessage(STORAGE_SAVE_NEW);
+                    else MyLog.e("writing to storage failed - that should not ever happen");
                     break;
                 // reading all \
                 case STORAGE_READ_ALL:
@@ -332,17 +345,18 @@ public class MainService extends Service {
     // created to avoid memory leaks if class not static when using default Handler-class \
     private static class MyHandler extends Handler {
 
-        WeakReference <MainService> weakReference;
+        @NonNull
+        WeakReference <MainService> wrMainService;
 
-        private MyHandler(MainService mainService) {
-            weakReference = new WeakReference <>(mainService);
+        private MyHandler(@NonNull MainService mainService) {
+            wrMainService = new WeakReference <>(mainService);
         }
 
         @Override
         public void handleMessage(@NotNull Message msg) {
             super.handleMessage(msg);
 
-            MainService mainService = weakReference.get();
+            final MainService mainService = wrMainService.get();
             if (mainService == null) {
                 MyLog.e("handleMessage: mainService == null");
                 return;

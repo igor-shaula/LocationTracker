@@ -1,5 +1,8 @@
 package com.igor_shaula.location_tracker.storage;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.igor_shaula.location_tracker.entity.LocationPoint;
 
 import java.util.List;
@@ -11,8 +14,9 @@ import java.util.List;
  */
 public interface StorageActions {
 
-    boolean write(LocationPoint locationPoint);
+    boolean write(@Nullable LocationPoint locationPoint);
 
+    @NonNull
     List<LocationPoint> readAll();
 
     void clearAll();
