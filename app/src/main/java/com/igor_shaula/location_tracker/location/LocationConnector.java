@@ -1,4 +1,4 @@
-package com.igor_shaula.location_tracker.service;
+package com.igor_shaula.location_tracker.location;
 
 import android.location.Location;
 import android.location.LocationListener;
@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 
 import com.igor_shaula.location_tracker.R;
 import com.igor_shaula.location_tracker.entity.LocationPoint;
+import com.igor_shaula.location_tracker.service.MainService;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
 
@@ -127,5 +128,12 @@ public final class LocationConnector {
     @NonNull
     public LocationPoint getCurrentLocationPoint() {
         return new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy);
+    }
+
+    public float[] getDistanceBetween(double startLat , double startLong , double endLat , double endLong) {
+        final float[] resultArray = new float[3]; // 3 is taken after looking into source code
+        // result of calculations is stored inside the resultArray \
+        Location.distanceBetween(startLat , startLong , endLat , endLong , resultArray);
+        return resultArray;
     }
 }

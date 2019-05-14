@@ -3,7 +3,6 @@ package com.igor_shaula.location_tracker.service;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.location.Location;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -14,12 +13,11 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.igor_shaula.location_tracker.entity.LocationPoint;
+import com.igor_shaula.location_tracker.location.LocationConnector;
 import com.igor_shaula.location_tracker.storage.StorageActions;
 import com.igor_shaula.location_tracker.storage.in_memory.InMemory;
 import com.igor_shaula.location_tracker.utilities.GlobalKeys;
 import com.igor_shaula.location_tracker.utilities.MyLog;
-
-import org.jetbrains.annotations.NotNull;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -31,26 +29,27 @@ public class MainService extends Service {
 
     private static final String STORAGE_THREAD = "my-storage-thread";
 
+    private int runnableState;
+
     @Nullable
     private PendingIntent pendingIntent;
 
     @NonNull
     private StorageActions storageActions = InMemory.getSingleton();
     @NonNull
-    private Handler mainHandler = new MyHandler(this);
+    private Handler mainHandler = new MainHandler(this);
+    // it will be used to send messages from inside worker threads and catch them inside UI thread \
+    @NonNull
+    private LocationConnector locationConnector = new LocationConnector(this);
     @NonNull
     private Runnable rStorageTask = new Runnable() {
         @Override
         public void run() {
             // avoiding potential concurrency for resources with main thread \
             Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
-
             switch (runnableState) {
                 // thread works this way by default but only once from the start of the service \
                 case InMemory.STORAGE_INIT_CLEAR:
-                    // create instance of abstract storage - choose realization only here \
-//                    storageActions = MyRealm.getSingleton(MainService.this);
-//                    storageActions = InMemory.getSingleton();
                     storageActions.clearAll();
                     mainHandler.sendEmptyMessage(InMemory.STORAGE_INIT_CLEAR);
                     break;
@@ -64,7 +63,6 @@ public class MainService extends Service {
                     break;
                 // reading all \
                 case InMemory.STORAGE_READ_ALL:
-//                    locationPointList = storageActions.readAll();
                     mainHandler.sendEmptyMessage(InMemory.STORAGE_READ_ALL);
                     break;
             } // end of switch-statement \\
@@ -72,12 +70,6 @@ public class MainService extends Service {
     };
     @NonNull
     private Thread storageThread = new Thread(rStorageTask , STORAGE_THREAD);
-
-    private int runnableState;
-
-    @NonNull
-    private LocationConnector locationConnector = new LocationConnector(this);
-
     @NonNull
     private List <LocationPoint> locationPointList = storageActions.readAll();
 
@@ -100,11 +92,7 @@ public class MainService extends Service {
             pendingIntent = PendingIntent.getActivity(getApplicationContext() ,
                     GlobalKeys.REQUEST_CODE_MAIN_SERVICE , new Intent() , 0);
 
-        // it will be used to send messages from inside worker threads and catch them inside UI thread \
-//        mainHandler = new MyHandler(this);
-
         // all even potentially hard work is kept in other threads \
-//        storageThread = new Thread(rStorageTask , STORAGE_THREAD);
         storageThread.setDaemon(true);
         storageThread.start();
 
@@ -121,11 +109,8 @@ public class MainService extends Service {
         super.onDestroy();
         // time to clean all resources \
         locationConnector.clearAllResources();
-//        if (mainHandler != null) {
-        // which way is better - remove every or all at once \
         mainHandler.removeCallbacks(rStorageTask);
         mainHandler.removeCallbacksAndMessages(null);
-//        }
     }
 
 // ACTIONS FROM LISTENER ===========================================================================
@@ -141,7 +126,7 @@ public class MainService extends Service {
         // my way to launch one action after another accounting worker threads completion \
         new Handler(new Handler.Callback() {
             @Override
-            public boolean handleMessage(@NotNull Message msg) {
+            public boolean handleMessage(@NonNull Message msg) {
                 switch (msg.what) {
                     // i have to launch reading data thread only when writing new point is done \
                     case InMemory.STORAGE_SAVE_NEW:
@@ -184,14 +169,13 @@ public class MainService extends Service {
     }
 
     // returns believable value of total passed distance \
-    private float getTotalDistance(List <LocationPoint> locationPointList) {
+    private float getTotalDistance(@NonNull List <LocationPoint> locationPointList) {
         int capacity = locationPointList.size();
         MyLog.i("capacity = " + capacity);
 
         // preparing rewritable containers for the following loop \
         LocationPoint startPoint, endPoint;
         double startLat, startLong, endLat, endLong;
-        float[] resultArray = new float[1];
         float totalDistanceInMeters = 0;
 
         // getting all data and receiving numbers at every step \
@@ -230,8 +214,8 @@ public class MainService extends Service {
                     // before calculating distance checking if it could be real \
                     if (startPoint.getSpeed() > 1) { // meters per second
 
-                        // result of calculations is stored inside the resultArray \
-                        Location.distanceBetween(startLat , startLong , endLat , endLong , resultArray);
+                        final float[] resultArray =
+                                locationConnector.getDistanceBetween(startLat , startLong , endLat , endLong);
                         MyLog.i(i + " calculations done: resultArray[0] = " + resultArray[0]);
 
                         // quick decision to cut off location noise and count only car movement \
@@ -265,17 +249,17 @@ public class MainService extends Service {
 // MULTITHREADING ==================================================================================
 
     // created to avoid memory leaks if class not static when using default Handler-class \
-    private static class MyHandler extends Handler {
+    private static class MainHandler extends Handler {
 
         @NonNull
         WeakReference <MainService> wrMainService;
 
-        private MyHandler(@NonNull MainService mainService) {
+        private MainHandler(@NonNull MainService mainService) {
             wrMainService = new WeakReference <>(mainService);
         }
 
         @Override
-        public void handleMessage(@NotNull Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
 
             final MainService mainService = wrMainService.get();
@@ -300,5 +284,5 @@ public class MainService extends Service {
             Toast.makeText(mainService , "handleMessage: " + whatMeaning , Toast.LENGTH_SHORT).show();
             MyLog.i("handleMessage: " + whatMeaning);
         }
-    } // end of MyHandler-inner-class \\
+    } // end of MainHandler-inner-class \\
 }
