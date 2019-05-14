@@ -3,9 +3,7 @@ package com.igor_shaula.location_tracker.service;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Message;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,7 +21,8 @@ import java.util.List;
 // TODO: 14.05.2019 describe the purpose of this service existence
 public class MainService extends Service {
 
-    private int storageState = InMemory.STORAGE_INIT_CLEAR;
+    private int storageState = InMemory.STORAGE_READ_ALL;
+//    private int storageState = InMemory.STORAGE_INIT_CLEAR;
 
     @Nullable
     private PendingIntent pendingIntent;
@@ -101,39 +100,41 @@ public class MainService extends Service {
     public void processLocationUpdate(@NonNull final LocationPoint locationPoint) {
 
         // the only place of saving current point into database \
-        storageState = InMemory.STORAGE_SAVE_NEW;
+//        storageState = InMemory.STORAGE_SAVE_NEW;
 
         final int[] distance = new int[1];
         // my way to launch one action after another accounting worker threads completion \
-        new Handler(new Handler.Callback() {
-            @Override
-            public boolean handleMessage(@NonNull Message msg) {
-                switch (msg.what) {
-                    // i have to launch reading data thread only when writing new point is done \
-                    case InMemory.STORAGE_SAVE_NEW:
-                        MyLog.i("handleMessage: saving thread finished - can begin reading");
-                        // now it is possible to safely read all data from the storage \
-                        storageState = InMemory.STORAGE_READ_ALL;
-//                        storageThread.start();
-                        return true;
-                    // begin calculations only when reading thread is completed \
-                    case InMemory.STORAGE_READ_ALL:
-                        // the next step has to be busy with saving new point of data \
-                        storageState = InMemory.STORAGE_SAVE_NEW;
-                        MyLog.i("handleMessage: reading thread finished - can begin calculations");
-                        distance[0] = (int) LocationMath.getTotalDistance(locationPointList);
-                        // preparing and sending data to MainActivity to update its UI \
-                        final Intent intentToReturn = new Intent()
-                                .putExtra(GlobalKeys.GPS_LATITUDE , locationPoint.getLatitude())
-                                .putExtra(GlobalKeys.GPS_LONGITUDE , locationPoint.getLongitude())
-                                .putExtra(GlobalKeys.GPS_TAKING_TIME , locationPoint.getTime())
-                                .putExtra(GlobalKeys.DISTANCE , distance[0]);
-                        sendIntentToActivity(intentToReturn); // 100
-                        return true;
-                } // end of switch-statement \\
-                return false;
-            } // end of handleMessage-method \\
-        }); // end of Handler instance definition \\
+//        new Handler(new Handler.Callback() {
+//            @Override
+//            public boolean handleMessage(@NonNull Message msg) {
+        switch (storageState) {
+//        switch (msg.what) {
+            // i have to launch reading data thread only when writing new point is done \
+            case InMemory.STORAGE_SAVE_NEW:
+                MyLog.i("handleMessage: saving thread finished - can begin reading");
+                // now it is possible to safely read all data from the storage \
+                storageState = InMemory.STORAGE_READ_ALL;
+//                        return true;
+                break;
+            // begin calculations only when reading thread is completed \
+            case InMemory.STORAGE_READ_ALL:
+                // the next step has to be busy with saving new point of data \
+                storageState = InMemory.STORAGE_SAVE_NEW;
+                MyLog.i("handleMessage: reading thread finished - can begin calculations");
+                distance[0] = (int) LocationMath.getTotalDistance(locationPointList);
+                // preparing and sending data to MainActivity to update its UI \
+                final Intent intentToReturn = new Intent()
+                        .putExtra(GlobalKeys.GPS_LATITUDE , locationPoint.getLatitude())
+                        .putExtra(GlobalKeys.GPS_LONGITUDE , locationPoint.getLongitude())
+                        .putExtra(GlobalKeys.GPS_TAKING_TIME , locationPoint.getTime())
+                        .putExtra(GlobalKeys.DISTANCE , distance[0]);
+                sendIntentToActivity(intentToReturn); // 100
+//                        return true;
+                break;
+        } // end of switch-statement \\
+//                return false;
+//            } // end of handleMessage-method \\
+//        }); // end of Handler instance definition \\
     } // end of processLocationUpdate-method \\
 
 // PRIVATE =========================================================================================
