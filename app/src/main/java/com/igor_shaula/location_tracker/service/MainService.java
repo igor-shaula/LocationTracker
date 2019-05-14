@@ -24,7 +24,7 @@ import java.util.List;
 // TODO: 14.05.2019 describe the purpose of this service existence
 public class MainService extends Service {
 
-    private static final String STORAGE_THREAD = "my-storage-thread";
+//    private static final String STORAGE_THREAD = "my-storage-thread";
 
     private int storageState = InMemory.STORAGE_INIT_CLEAR;
 
@@ -65,8 +65,8 @@ public class MainService extends Service {
             } // end of switch-statement \\
         } // end of run-method \\
     };
-    @NonNull
-    private Thread storageThread = new Thread(rStorageTask , STORAGE_THREAD);
+    //    @NonNull
+//    private Thread storageThread = new Thread(rStorageTask , STORAGE_THREAD);
     @NonNull
     private List <LocationPoint> locationPointList = storageActions.readAll();
 
@@ -93,8 +93,8 @@ public class MainService extends Service {
             MyLog.d("obtained pending intent");
 
         // all even potentially hard work is kept in other threads \
-        storageThread.setDaemon(true);
-        storageThread.start();
+//        storageThread.setDaemon(true);
+//        storageThread.start();
 
 //        new Handler(getMainLooper()).post(new Runnable() {
 //            @Override
@@ -127,7 +127,7 @@ public class MainService extends Service {
 
         // the only place of saving current point into database \
         storageState = InMemory.STORAGE_SAVE_NEW;
-        storageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
+//        storageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
 
         final int[] distance = new int[1];
         // my way to launch one action after another accounting worker threads completion \
@@ -140,7 +140,7 @@ public class MainService extends Service {
                         MyLog.i("handleMessage: saving thread finished - can begin reading");
                         // now it is possible to safely read all data from the storage \
                         storageState = InMemory.STORAGE_READ_ALL;
-                        storageThread.start();
+//                        storageThread.start();
                         return true;
                     // begin calculations only when reading thread is completed \
                     case InMemory.STORAGE_READ_ALL:
@@ -175,8 +175,8 @@ public class MainService extends Service {
         }
     }
 
-    @Nullable
-    public PendingIntent getPendingIntent() {
-        return pendingIntent;
-    }
+//    @Nullable
+//    public PendingIntent getPendingIntent() {
+//        return pendingIntent;
+//    }
 }
