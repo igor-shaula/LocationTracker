@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.os.Process;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,8 +23,6 @@ import java.util.List;
 // TODO: 14.05.2019 describe the purpose of this service existence
 public class MainService extends Service {
 
-//    private static final String STORAGE_THREAD = "my-storage-thread";
-
     private int storageState = InMemory.STORAGE_INIT_CLEAR;
 
     @Nullable
@@ -33,40 +30,30 @@ public class MainService extends Service {
 
     @NonNull
     private StorageActions storageActions = InMemory.getSingleton();
-    @NonNull
-    private Handler mainHandler = new MainHandler(this);
-    // it will be used to send messages from inside worker threads and catch them inside UI thread \
+
     @NonNull
     private LocationConnector locationConnector = new LocationConnector(this);
     @NonNull
     private Runnable rStorageTask = new Runnable() {
         @Override
         public void run() {
-            // avoiding potential concurrency for resources with main thread \
-            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
             switch (storageState) {
                 // thread works this way by default but only once from the start of the service \
                 case InMemory.STORAGE_INIT_CLEAR:
                     storageActions.clearAll();
-                    mainHandler.sendEmptyMessage(InMemory.STORAGE_INIT_CLEAR);
                     break;
                 // saving new point \
                 case InMemory.STORAGE_SAVE_NEW:
                     // taking arguments in such way looks like a crutch - but it's needed \
-                    final LocationPoint currentLocationPoint = locationConnector.getCurrentLocationPoint();
-                    if (storageActions.write(currentLocationPoint))
-                        mainHandler.sendEmptyMessage(InMemory.STORAGE_SAVE_NEW);
-                    else MyLog.e("writing to storage failed - that should not ever happen");
+                    if (!storageActions.write(locationConnector.getCurrentLocationPoint()))
+                        MyLog.e("writing to storage failed - that should not ever happen");
                     break;
                 // reading all \
                 case InMemory.STORAGE_READ_ALL:
-                    mainHandler.sendEmptyMessage(InMemory.STORAGE_READ_ALL);
                     break;
             } // end of switch-statement \\
         } // end of run-method \\
     };
-    //    @NonNull
-//    private Thread storageThread = new Thread(rStorageTask , STORAGE_THREAD);
     @NonNull
     private List <LocationPoint> locationPointList = storageActions.readAll();
 
@@ -92,32 +79,20 @@ public class MainService extends Service {
         } else
             MyLog.d("obtained pending intent");
 
-        // all even potentially hard work is kept in other threads \
-//        storageThread.setDaemon(true);
-//        storageThread.start();
+        // TODO: 15.05.2019 later place all potentially long-lasting operations in background threads
 
-//        new Handler(getMainLooper()).post(new Runnable() {
-//            @Override
-//            public void run() {
-//        MyLog.d("running on thread: " + Thread.currentThread().getName());
-//        MyLog.d("running on thread: " + Thread.currentThread().getId());
         // finally launching main sequence to get the location data \
         locationConnector.gpsTrackingStart(); // checked & proved - it does start on main thread
-//            }
-//        });
 
         return Service.START_REDELIVER_INTENT;
 
         // TODO: 14.06.2016 use WakeLock to prevent processor from sleeping \
-    } // end of onStartCommand-method \\
+    }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // time to clean all resources \
         locationConnector.clearAllResources();
-        mainHandler.removeCallbacks(rStorageTask);
-        mainHandler.removeCallbacksAndMessages(null);
     }
 
 // PAYLOAD =========================================================================================
@@ -127,7 +102,6 @@ public class MainService extends Service {
 
         // the only place of saving current point into database \
         storageState = InMemory.STORAGE_SAVE_NEW;
-//        storageThread.start(); // java.lang.IllegalThreadStateException: Thread already started
 
         final int[] distance = new int[1];
         // my way to launch one action after another accounting worker threads completion \
@@ -174,9 +148,4 @@ public class MainService extends Service {
             e.printStackTrace();
         }
     }
-
-//    @Nullable
-//    public PendingIntent getPendingIntent() {
-//        return pendingIntent;
-//    }
 }

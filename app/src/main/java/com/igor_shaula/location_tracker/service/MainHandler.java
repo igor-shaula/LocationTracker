@@ -12,6 +12,7 @@ import com.igor_shaula.location_tracker.utilities.MyLog;
 import java.lang.ref.WeakReference;
 
 public final class MainHandler extends Handler {
+    // it will be used to send messages from inside worker threads and catch them inside UI thread \
 
     @NonNull
     private WeakReference <MainService> wrMainService;
