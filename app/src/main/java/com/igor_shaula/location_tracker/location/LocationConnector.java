@@ -1,10 +1,12 @@
 package com.igor_shaula.location_tracker.location;
 
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.LocationProvider;
 import android.os.Bundle;
+import android.os.Looper;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -99,11 +101,45 @@ public final class LocationConnector {
         // if all permissions are given - time to launch listening to location updates \
         try {
             if (locationManager != null) {
-                locationManager.requestLocationUpdates( // TODO: 14.05.2019 RuntimeException here !!!
-                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
+//                RuntimeException here !!!
+//                locationManager.requestLocationUpdates(
+//                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
+//                        GlobalKeys.MIN_PERIOD_MILLISECONDS ,
+//                        GlobalKeys.MIN_DISTANCE_IN_METERS ,
+//                        locationListener);
+//                RuntimeException also
+//                locationManager.requestLocationUpdates(
+//                        LocationManager.GPS_PROVIDER , // for GPS - fine precision
+//                        GlobalKeys.MIN_PERIOD_MILLISECONDS ,
+//                        GlobalKeys.MIN_DISTANCE_IN_METERS ,
+//                        locationListener ,
+//                        Looper.myLooper()
+//                );
+                final Criteria criteria = new Criteria();
+                criteria.setAccuracy(Criteria.ACCURACY_COARSE);
+//                again RuntimeException - but this time we somehow receive callback invocation
+                locationManager.requestLocationUpdates(
                         GlobalKeys.MIN_PERIOD_MILLISECONDS ,
                         GlobalKeys.MIN_DISTANCE_IN_METERS ,
-                        locationListener);
+                        criteria ,
+                        locationListener ,
+                        Looper.getMainLooper()
+//                        Looper.myLooper()
+                );
+//                again RuntimeException - but this time it's not documented
+//                locationManager.requestLocationUpdates(
+//                        GlobalKeys.MIN_PERIOD_MILLISECONDS,
+//                        GlobalKeys.MIN_DISTANCE_IN_METERS,
+//                        criteria,
+//                        mainService.getPendingIntent()
+//                );
+//                again RuntimeException - but this time it's not documented
+//                locationManager.requestLocationUpdates(
+//                        LocationManager.GPS_PROVIDER ,
+//                        GlobalKeys.MIN_PERIOD_MILLISECONDS ,
+//                        GlobalKeys.MIN_DISTANCE_IN_METERS ,
+//                        mainService.getPendingIntent()
+//                );
 
                 final LocationProvider locationProvider = locationManager.getProvider(LocationManager.GPS_PROVIDER);
                 if (locationProvider != null) {

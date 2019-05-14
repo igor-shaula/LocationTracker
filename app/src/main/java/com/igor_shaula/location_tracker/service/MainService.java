@@ -96,8 +96,15 @@ public class MainService extends Service {
         storageThread.setDaemon(true);
         storageThread.start();
 
+//        new Handler(getMainLooper()).post(new Runnable() {
+//            @Override
+//            public void run() {
+//        MyLog.d("running on thread: " + Thread.currentThread().getName());
+//        MyLog.d("running on thread: " + Thread.currentThread().getId());
         // finally launching main sequence to get the location data \
-        locationConnector.gpsTrackingStart();
+        locationConnector.gpsTrackingStart(); // checked & proved - it does start on main thread
+//            }
+//        });
 
         return Service.START_REDELIVER_INTENT;
 
@@ -166,5 +173,10 @@ public class MainService extends Service {
         } catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
         }
+    }
+
+    @Nullable
+    public PendingIntent getPendingIntent() {
+        return pendingIntent;
     }
 }
