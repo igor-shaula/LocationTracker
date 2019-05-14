@@ -22,7 +22,6 @@ import static android.content.Context.LOCATION_SERVICE;
 this class has to keep all system-level location dependencies inside,
 allowing only app-dependent data to be visible out from it ..
 */
-
 public final class LocationConnector {
 
     @NonNull
@@ -130,7 +129,7 @@ public final class LocationConnector {
         return new LocationPoint(dataLatitude , dataLongitude , dataTime , dataSpeed , dataAccuracy);
     }
 
-    public float[] getDistanceBetween(double startLat , double startLong , double endLat , double endLong) {
+    public static float[] getDistanceBetween(double startLat , double startLong , double endLat , double endLong) {
         final float[] resultArray = new float[3]; // 3 is taken after looking into source code
         // result of calculations is stored inside the resultArray \
         Location.distanceBetween(startLat , startLong , endLat , endLong , resultArray);
